@@ -41,6 +41,9 @@ class UploadController extends GetxController {
   /// Connection status
   final RxBool isConnected = false.obs;
 
+  /// Confidence threshold for PPE detection (0.0 to 1.0)
+  final RxDouble confidenceThreshold = 0.5.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -131,6 +134,7 @@ class UploadController extends GetxController {
 
       final result = await _detectionApi.uploadImageForDetection(
         selectedImage.value!,
+        confidenceThreshold: confidenceThreshold.value,
       );
 
       uploadProgress.value = 0.8;

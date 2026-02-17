@@ -13,7 +13,13 @@ class DetectionApiService {
   /// Upload an image for PPE detection.
   ///
   /// Returns a [DetectionResult] with the analysis data.
-  Future<DetectionResult> uploadImageForDetection(File imageFile) async {
+  ///
+  /// [confidenceThreshold] Optional confidence threshold (0.0 - 1.0) for filtering detections.
+  /// Defaults to 0.5 if not provided.
+  Future<DetectionResult> uploadImageForDetection(
+    File imageFile, {
+    double? confidenceThreshold,
+  }) async {
     try {
       print('🔵 [API] Uploading image to: ${ApiConstants.baseUrl}${ApiConstants.detectionUpload.fullPath}');
 
@@ -31,6 +37,8 @@ class DetectionApiService {
           fileBytes,
           filename: imageFile.path.split('/').last,
         ),
+        if (confidenceThreshold != null)
+          'confidence_threshold': confidenceThreshold,
       });
 
       print('🔵 [API] Sending POST request...');
