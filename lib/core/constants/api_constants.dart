@@ -7,6 +7,7 @@ class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://138.199.148.126',
+  //defaultValue: 'http://127.0.0.1:8000',
   );
 
   /// WebSocket URL for real-time detection
@@ -20,6 +21,7 @@ class ApiConstants {
   static const String register = '/auth/register/';
   static const String logout = '/auth/logout/';
   static const String profile = '/auth/profile/';
+  static const String createWorkerAccount = '/auth/workers/create-account/';
 
   // Detection endpoints
   static const String detectionUpload = '/detection/upload/';
@@ -30,10 +32,13 @@ class ApiConstants {
 
   // WebSocket endpoint
   static const String wsDetection = '/ws/detect/';
+  static const String wsNotifications = '/ws/notifications/';
 
   // Worker endpoints
   static const String workers = '/workers/';
-  static const String workersStats = '/workers/stats/';
+  static const String workerAddWithPhoto = '/workers/add-with-photo/';
+  static const String workerById = '/workers/id/';
+  static const String workerViolations = '/workers/violations/';
 
   // Alert endpoints
   static const String alertConfig = '/alerts/config/';

@@ -1,20 +1,39 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/models/ppe_item.dart';
-import '../../data/models/worker.dart' as worker_model;
+import '../../data/services/api/auth_api_service.dart';
+import '../../data/services/api/worker_api.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
-import '../../routes/app_routes.dart';
 
 /// Controller for worker registration and management screen.
 /// Manages form state, validation, and submission.
 class WorkerController extends GetxController {
+  /// Auth API service for creating worker accounts
+  late final AuthApiService _authApiService;
+  late final WorkerApi _workerApi;
+  final ImagePicker _picker = ImagePicker();
+
+  // Photo state
+  final Rx<File?> selectedPhoto = Rx<File?>(null);
+  final RxString photoError = ''.obs;
+
   // Form state observables
   final RxString workerId = ''.obs;
   final RxString fullName = ''.obs;
   final RxString department = ''.obs;
   final RxString jobTitle = ''.obs;
   final RxList<PPEType> requiredPpe = <PPEType>[].obs;
+
+  // Account creation section
+  final RxBool createAccount = false.obs;
+  final RxString username = ''.obs;
+  final RxString password = ''.obs;
+  final RxString email = ''.obs;
+  final RxString usernameError = ''.obs;
+  final RxString passwordError = ''.obs;
 
   // Validation error observables
   final RxString workerIdError = ''.obs;
@@ -56,16 +75,26 @@ class WorkerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _authApiService = Get.find<AuthApiService>();
+    _workerApi = Get.find<WorkerApi>();
     _loadExistingWorkers();
   }
 
   @override
   void onClose() {
+    selectedPhoto.close();
+    photoError.close();
     workerId.close();
     fullName.close();
     department.close();
     jobTitle.close();
     requiredPpe.close();
+    createAccount.close();
+    username.close();
+    password.close();
+    email.close();
+    usernameError.close();
+    passwordError.close();
     workerIdError.close();
     fullNameError.close();
     departmentError.close();
@@ -85,6 +114,48 @@ class WorkerController extends GetxController {
     } catch (e) {
       // Handle error silently for now
     }
+  }
+
+  /// Pick photo from camera.
+  Future<void> pickPhotoFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1080,
+        maxHeight: 1080,
+      );
+      if (image != null) {
+        selectedPhoto.value = File(image.path);
+        photoError.value = '';
+      }
+    } catch (e) {
+      photoError.value = 'Failed to capture photo';
+    }
+  }
+
+  /// Pick photo from gallery.
+  Future<void> pickPhotoFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1080,
+        maxHeight: 1080,
+      );
+      if (image != null) {
+        selectedPhoto.value = File(image.path);
+        photoError.value = '';
+      }
+    } catch (e) {
+      photoError.value = 'Failed to select photo';
+    }
+  }
+
+  /// Remove selected photo.
+  void removePhoto() {
+    selectedPhoto.value = null;
+    photoError.value = '';
   }
 
   /// Validates worker ID field.
@@ -140,6 +211,12 @@ class WorkerController extends GetxController {
   bool validateForm() {
     bool isValid = true;
 
+    // Validate photo
+    if (selectedPhoto.value == null) {
+      photoError.value = 'A face photo is required for worker identification';
+      isValid = false;
+    }
+
     // Validate worker ID
     final workerIdValidation = AppValidators.validateWorkerId(workerId.value);
     workerIdError.value = workerIdValidation ?? '';
@@ -178,71 +255,9 @@ class WorkerController extends GetxController {
     return isValid;
   }
 
-  /// Submits the worker registration form.
+  /// Submits the worker registration form (legacy - uses new method).
   Future<void> submitForm() async {
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      isLoading.value = true;
-
-      // Create worker object
-      final worker = worker_model.Worker(
-        id: workerId.value,
-        fullName: fullName.value,
-        department: department.value,
-        jobTitle: jobTitle.value,
-        requiredPpe: requiredPpe.toList(),
-        createdAt: DateTime.now(),
-        violationCount: 0,
-      );
-
-      // TODO: Save worker to WorkerRepository
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Add to existing IDs for duplicate check
-      existingWorkerIds.add(worker.id);
-
-      // Show success message
-      Get.snackbar(
-        'Success',
-        'Worker "${worker.fullName}" has been added successfully.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF4CAF50),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-
-      // Navigate to worker list or back
-      Get.back();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to add worker. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFF44336),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Resets the form to initial state.
-  void resetForm() {
-    workerId.value = '';
-    fullName.value = '';
-    department.value = '';
-    jobTitle.value = '';
-    requiredPpe.clear();
-
-    workerIdError.value = '';
-    fullNameError.value = '';
-    departmentError.value = '';
-    jobTitleError.value = '';
-    ppeError.value = '';
+    await submitFormWithAccount();
   }
 
   /// Gets job titles for the selected department.
@@ -255,15 +270,169 @@ class WorkerController extends GetxController {
 
   /// Checks if the form is valid.
   bool get isFormValid {
-    return workerIdError.value.isEmpty &&
+    return photoError.value.isEmpty &&
+        workerIdError.value.isEmpty &&
         fullNameError.value.isEmpty &&
         departmentError.value.isEmpty &&
         jobTitleError.value.isEmpty &&
         ppeError.value.isEmpty &&
+        selectedPhoto.value != null &&
         workerId.value.isNotEmpty &&
         fullName.value.isNotEmpty &&
         department.value.isNotEmpty &&
         jobTitle.value.isNotEmpty &&
         requiredPpe.isNotEmpty;
+  }
+
+  /// Toggle account creation
+  void toggleCreateAccount(bool value) {
+    createAccount.value = value;
+    if (!value) {
+      username.value = '';
+      password.value = '';
+      email.value = '';
+      usernameError.value = '';
+      passwordError.value = '';
+    }
+  }
+
+  /// Validates username field
+  void validateUsernameField(String value) {
+    username.value = value;
+    if (value.isEmpty && createAccount.value) {
+      usernameError.value = 'Username is required';
+    } else if (value.length < 3) {
+      usernameError.value = 'Username must be at least 3 characters';
+    } else {
+      usernameError.value = '';
+    }
+  }
+
+  /// Validates password field
+  void validatePasswordField(String value) {
+    password.value = value;
+    if (value.isEmpty && createAccount.value) {
+      passwordError.value = 'Password is required';
+    } else if (value.length < 6) {
+      passwordError.value = 'Password must be at least 6 characters';
+    } else {
+      passwordError.value = '';
+    }
+  }
+
+  /// Validates account section
+  bool validateAccountSection() {
+    if (!createAccount.value) return true;
+
+    bool isValid = true;
+
+    if (username.value.isEmpty) {
+      usernameError.value = 'Username is required';
+      isValid = false;
+    } else if (username.value.length < 3) {
+      usernameError.value = 'Username must be at least 3 characters';
+      isValid = false;
+    }
+
+    if (password.value.isEmpty) {
+      passwordError.value = 'Password is required';
+      isValid = false;
+    } else if (password.value.length < 6) {
+      passwordError.value = 'Password must be at least 6 characters';
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  /// Validates all form fields including account section.
+  bool validateFormWithAccount() {
+    return validateForm() && validateAccountSection();
+  }
+
+  /// Submits the worker registration form with optional account creation.
+  Future<void> submitFormWithAccount() async {
+    if (!validateFormWithAccount()) {
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      // Save worker with photo to backend
+      await _workerApi.addWorkerWithPhoto(
+        workerId: workerId.value,
+        name: fullName.value,
+        photo: selectedPhoto.value!,
+        department: department.value.isNotEmpty ? department.value : null,
+        position: jobTitle.value.isNotEmpty ? jobTitle.value : null,
+        requiredPpe: requiredPpe.isNotEmpty
+            ? requiredPpe.map((e) => e.name).toList()
+            : null,
+      );
+
+      // Add to existing IDs for duplicate check
+      existingWorkerIds.add(workerId.value);
+
+      // Create worker account if requested
+      if (createAccount.value) {
+        await _authApiService.createWorkerAccount(
+          workerId: workerId.value,
+          username: username.value,
+          password: password.value,
+          email: email.value.isNotEmpty ? email.value : null,
+        );
+      }
+
+      // Show success message
+      Get.snackbar(
+        'Success',
+        createAccount.value
+            ? 'Worker "${fullName.value}" and account created successfully.'
+            : 'Worker "${fullName.value}" has been added successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF4CAF50),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+
+      // Reset form and navigate back
+      resetForm();
+      Get.back();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to add worker: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFF44336),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Resets the form to initial state.
+  void resetForm() {
+    selectedPhoto.value = null;
+    photoError.value = '';
+    workerId.value = '';
+    fullName.value = '';
+    department.value = '';
+    jobTitle.value = '';
+    requiredPpe.clear();
+    createAccount.value = false;
+    username.value = '';
+    password.value = '';
+    email.value = '';
+
+    workerIdError.value = '';
+    fullNameError.value = '';
+    departmentError.value = '';
+    jobTitleError.value = '';
+    ppeError.value = '';
+    usernameError.value = '';
+    passwordError.value = '';
   }
 }

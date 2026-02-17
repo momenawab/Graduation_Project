@@ -33,6 +33,11 @@ class AddWorkerScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
 
+              // Photo Picker Section
+              _buildPhotoPickerSection(controller),
+
+              const SizedBox(height: 24),
+
               // Worker ID Input
               _buildWorkerIdInput(controller),
 
@@ -58,12 +63,172 @@ class AddWorkerScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
+              // Account Creation Section
+              _buildAccountCreationSection(controller),
+
+              const SizedBox(height: 32),
+
               // Submit Button
               _buildSubmitButton(controller),
 
               const SizedBox(height: 16),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the photo picker section with circular avatar and camera/gallery buttons.
+  Widget _buildPhotoPickerSection(WorkerController controller) {
+    return Obx(() {
+      final photo = controller.selectedPhoto.value;
+      final hasError = controller.photoError.value.isNotEmpty;
+
+      return Column(
+        children: [
+          // Circular avatar with photo or placeholder
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.cardBackground,
+                  border: Border.all(
+                    color: hasError
+                        ? AppColors.error
+                        : photo != null
+                            ? AppColors.primary
+                            : AppColors.textSecondary.withOpacity(0.3),
+                    width: 2,
+                  ),
+                  image: photo != null
+                      ? DecorationImage(
+                          image: FileImage(photo),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: photo == null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.camera_alt,
+                            size: 32,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Add Photo',
+                            style: styles.AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      )
+                    : null,
+              ),
+              // Remove photo button
+              if (photo != null)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: controller.removePhoto,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.error,
+                        border: Border.all(color: AppColors.background, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Camera and Gallery buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildPhotoButton(
+                icon: Icons.camera_alt,
+                label: 'Camera',
+                onTap: controller.pickPhotoFromCamera,
+              ),
+              const SizedBox(width: 16),
+              _buildPhotoButton(
+                icon: Icons.photo_library,
+                label: 'Gallery',
+                onTap: controller.pickPhotoFromGallery,
+              ),
+            ],
+          ),
+          if (hasError) ...[
+            const SizedBox(height: 8),
+            Text(
+              controller.photoError.value,
+              style: styles.AppTextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            'A clear face photo is required for worker identification',
+            style: styles.AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    });
+  }
+
+  /// Builds a small icon button for photo picking.
+  Widget _buildPhotoButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: styles.AppTextStyles.bodySmall.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -347,6 +512,136 @@ class AddWorkerScreen extends StatelessWidget {
           isLoading: controller.isLoading.value,
           backgroundColor: AppColors.primary,
         ),
+      );
+    });
+  }
+
+  /// Builds the account creation section with toggle and form fields.
+  Widget _buildAccountCreationSection(WorkerController controller) {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with toggle
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.textSecondary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.person_add,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create Worker Login Account',
+                        style: styles.AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Allow this worker to log into the app using their own credentials',
+                        style: styles.AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: controller.createAccount.value,
+                  onChanged: controller.toggleCreateAccount,
+                  activeColor: AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+
+          // Account fields (shown when toggle is on)
+          if (controller.createAccount.value) ...[
+            const SizedBox(height: 16),
+
+            // Username Input
+            _buildUsernameInput(controller),
+
+            const SizedBox(height: 16),
+
+            // Password Input
+            _buildPasswordInput(controller),
+
+            const SizedBox(height: 16),
+
+            // Email Input (optional)
+            _buildEmailInput(controller),
+          ],
+        ],
+      );
+    });
+  }
+
+  /// Builds username input field.
+  Widget _buildUsernameInput(WorkerController controller) {
+    return Obx(() {
+      return AppInput(
+        label: 'Username',
+        hintText: 'Enter login username',
+        value: controller.username.value,
+        onChanged: controller.validateUsernameField,
+        keyboardType: TextInputType.text,
+        textCapitalization: TextCapitalization.none,
+        maxLength: 30,
+        isRequired: controller.createAccount.value,
+        errorText: controller.usernameError.value.isEmpty
+            ? null
+            : controller.usernameError.value,
+        prefixIcon: Icons.person_outline,
+      );
+    });
+  }
+
+  /// Builds password input field.
+  Widget _buildPasswordInput(WorkerController controller) {
+    return Obx(() {
+      return AppInput(
+        label: 'Password',
+        hintText: 'Enter password (min 6 characters)',
+        value: controller.password.value,
+        onChanged: controller.validatePasswordField,
+        keyboardType: TextInputType.visiblePassword,
+        textCapitalization: TextCapitalization.none,
+        maxLength: 128,
+        obscureText: true,
+        isRequired: controller.createAccount.value,
+        errorText: controller.passwordError.value.isEmpty
+            ? null
+            : controller.passwordError.value,
+        prefixIcon: Icons.lock_outline,
+      );
+    });
+  }
+
+  /// Builds email input field (optional).
+  Widget _buildEmailInput(WorkerController controller) {
+    return Obx(() {
+      return AppInput(
+        label: 'Email (Optional)',
+        hintText: 'Enter email address',
+        value: controller.email.value,
+        onChanged: (value) => controller.email.value = value,
+        keyboardType: TextInputType.emailAddress,
+        textCapitalization: TextCapitalization.none,
+        prefixIcon: Icons.email_outlined,
       );
     });
   }

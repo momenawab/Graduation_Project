@@ -12,6 +12,9 @@ enum ComplianceStatus {
 
   /// Critical PPE missing
   nonCompliant,
+
+  /// Unknown status
+  unknown,
 }
 
 /// Model representing a bounding box for detection.

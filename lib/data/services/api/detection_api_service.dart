@@ -174,8 +174,8 @@ class DetectionApiService {
       final response = await _apiClient.dio.get(
         ApiConstants.detectionHealth.fullPath,
       );
-      return response.data['status'] == 'healthy' &&
-          response.data['model_loaded'] == true;
+      final data = response.data as Map<String, dynamic>;
+      return data['status'] == 'healthy';
     } catch (e) {
       return false;
     }

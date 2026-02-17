@@ -18,6 +18,7 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
       body: SafeArea(
         child: Column(
           children: [
@@ -29,9 +30,6 @@ class HomeScreen extends StatelessWidget {
 
             // Function cards grid
             Expanded(child: _buildFunctionCardsGrid(controller)),
-
-            // Bottom navigation
-            const BottomNavBar(currentIndex: 0),
           ],
         ),
       ),
@@ -192,7 +190,7 @@ class HomeScreen extends StatelessWidget {
           // Personnel card
           _FunctionCard(
             icon: Icons.people,
-            title: 'Personnel',
+            title: 'Add Worker',
             subtitle: 'Worker management',
             color: AppColors.primary,
             onTap: controller.navigateToAddWorker,
@@ -216,13 +214,13 @@ class HomeScreen extends StatelessWidget {
             onTap: controller.navigateToUploadDetection,
           ),
 
-          // Alert History card
+          // Workers Monitor card
           _FunctionCard(
-            icon: Icons.history,
-            title: 'Alert History',
-            subtitle: 'View past alerts',
+            icon: Icons.person_search,
+            title: 'Workers Monitor',
+            subtitle: 'Scan & identify',
             color: AppColors.primary,
-            onTap: controller.navigateToInstructions,
+            onTap: controller.navigateToWorkerMonitor,
           ),
         ],
       ),

@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/detection_result.dart';
 import '../../data/models/ppe_item.dart';
 import '../../data/services/websocket/detection_stream.dart';
-import 'package:safesight/core/constants/api_constants.dart';
 
 /// Controller for real-time safety monitoring screen.
 /// Manages camera lifecycle, detection stream, and alert state.

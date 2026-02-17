@@ -94,6 +94,11 @@ class ComplianceBadge extends StatelessWidget {
           backgroundColor: AppColors.error,
           icon: Icons.error,
         );
+      case ComplianceStatus.unknown:
+        return _ComplianceConfig(
+          backgroundColor: AppColors.error,
+          icon: Icons.error,
+        );
     }
   }
 }

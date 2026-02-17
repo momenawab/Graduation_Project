@@ -25,9 +25,11 @@ class HomeController extends GetxController {
   /// Observable for loading state
   final RxBool isLoading = false.obs;
 
-  /// Navigates to monitoring screen.
+  /// Navigates to monitoring screen (Coming Soon placeholder).
   void navigateToMonitoring() {
-    Get.toNamed(AppRoutes.MONITORING);
+    Get.toNamed(
+      '${AppRoutes.COMING_SOON}?icon=monitoring&title=Monitoring&description=Real-time PPE monitoring and detection streaming will be available soon.',
+    );
   }
 
   /// Navigates to add worker screen.
@@ -45,14 +47,16 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.REPORTS);
   }
 
-  /// Navigates to alert config screen.
+  /// Navigates to alert config screen (Coming Soon placeholder).
   void navigateToAlertConfig() {
-    Get.toNamed(AppRoutes.ALERT_CONFIG);
+    Get.toNamed(
+      '${AppRoutes.COMING_SOON}?icon=thresholds&title=Thresholds&description=Configure PPE compliance thresholds and alert settings.',
+    );
   }
 
-  /// Navigates to instructions screen.
-  void navigateToInstructions() {
-    Get.toNamed(AppRoutes.INSTRUCTIONS);
+  /// Navigates to worker monitor screen.
+  void navigateToWorkerMonitor() {
+    Get.toNamed(AppRoutes.WORKER_MONITOR);
   }
 
   /// Navigates to settings screen.

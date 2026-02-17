@@ -91,6 +91,10 @@ class StorageService {
   // User Authentication
   static const String _userIdKey = 'user_id';
   static const String _authTokenKey = 'auth_token';
+  static const String _userRoleKey = 'user_role';
+  static const String _usernameKey = 'username';
+  static const String _workerIdKey = 'worker_id';
+  static const String _workerNameKey = 'worker_name';
 
   /// Gets the current user ID.
   String? get userId => prefs.getString(_userIdKey);
@@ -114,10 +118,67 @@ class StorageService {
     return await prefs.setString(_authTokenKey, token!);
   }
 
+  /// Gets the user role.
+  String? get userRole => prefs.getString(_userRoleKey);
+
+  /// Sets the user role.
+  Future<bool> setUserRole(String? role) async {
+    if (role == null) {
+      return await prefs.remove(_userRoleKey);
+    }
+    return await prefs.setString(_userRoleKey, role);
+  }
+
+  /// Gets the username.
+  String? get username => prefs.getString(_usernameKey);
+
+  /// Sets the username.
+  Future<bool> setUsername(String? username) async {
+    if (username == null) {
+      return await prefs.remove(_usernameKey);
+    }
+    return await prefs.setString(_usernameKey, username);
+  }
+
+  /// Gets the worker ID (for worker role).
+  String? get workerId => prefs.getString(_workerIdKey);
+
+  /// Sets the worker ID.
+  Future<bool> setWorkerId(String? workerId) async {
+    if (workerId == null) {
+      return await prefs.remove(_workerIdKey);
+    }
+    return await prefs.setString(_workerIdKey, workerId);
+  }
+
+  /// Gets the worker name (for worker role).
+  String? get workerName => prefs.getString(_workerNameKey);
+
+  /// Sets the worker name.
+  Future<bool> setWorkerName(String? workerName) async {
+    if (workerName == null) {
+      return await prefs.remove(_workerNameKey);
+    }
+    return await prefs.setString(_workerNameKey, workerName);
+  }
+
+  /// Checks if user is logged in.
+  bool get isLoggedIn => userId != null && authToken != null;
+
+  /// Checks if current user is a worker.
+  bool get isWorker => userRole == 'worker';
+
+  /// Checks if current user is an admin.
+  bool get isAdmin => userRole == 'admin' || userRole == 'supervisor';
+
   /// Clears all user-specific data (logout).
   Future<void> clearUserData() async {
     await prefs.remove(_userIdKey);
     await prefs.remove(_authTokenKey);
+    await prefs.remove(_userRoleKey);
+    await prefs.remove(_usernameKey);
+    await prefs.remove(_workerIdKey);
+    await prefs.remove(_workerNameKey);
   }
 
   /// Clears all stored data.

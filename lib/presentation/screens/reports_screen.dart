@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/text_styles.dart' as styles;
 import '../../data/models/report_data.dart';
+import '../../routes/app_routes.dart';
 
 /// Reports screen with safety analytics, metrics, and chart visualization.
 @immutable
@@ -30,7 +31,7 @@ class ReportsScreen extends StatelessWidget {
             Expanded(child: _buildContent(controller)),
 
             // Bottom navigation
-            const _ReportsBottomNav(currentIndex: 3),
+            const BottomNavBar(currentIndex: 2),
           ],
         ),
       ),
@@ -122,6 +123,11 @@ class ReportsScreen extends StatelessWidget {
 
           // Sync banner
           _buildSyncBanner(),
+
+          const SizedBox(height: 16),
+
+          // Worker violations list
+          _buildWorkerViolationsSection(controller),
 
           const SizedBox(height: 16),
         ],
@@ -326,6 +332,73 @@ class ReportsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Builds worker violations list section.
+  Widget _buildWorkerViolationsSection(ReportsController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.people, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Worker Violations',
+              style: styles.AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        Obx(() {
+          final workers = controller.workerStats;
+
+          if (workers.isEmpty) {
+            return AppCard(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      color: AppColors.textSecondary,
+                      size: 40,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No worker data available',
+                      style: styles.AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return Column(
+            children: workers.map((worker) {
+              return _WorkerViolationCard(
+                workerId: worker.workerId,
+                name: worker.name,
+                photoUrl: worker.photoUrl,
+                violationCount: worker.violationCount,
+                complianceRate: worker.complianceRate,
+                onTap: () => Get.toNamed(
+                  '${AppRoutes.WORKER_DETAILS.replaceAll(':id', worker.workerId)}',
+                ),
+              );
+            }).toList(),
+          );
+        }),
+      ],
     );
   }
 }
@@ -538,6 +611,167 @@ class _NavItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Worker violation card widget for reports screen.
+@immutable
+class _WorkerViolationCard extends StatelessWidget {
+  final String workerId;
+  final String name;
+  final String? photoUrl;
+  final int violationCount;
+  final double complianceRate;
+  final VoidCallback onTap;
+
+  const _WorkerViolationCard({
+    required this.workerId,
+    required this.name,
+    this.photoUrl,
+    required this.violationCount,
+    required this.complianceRate,
+    required this.onTap,
+  });
+
+  Color _getComplianceColor() {
+    if (complianceRate >= 95) return AppColors.success;
+    if (complianceRate >= 85) return AppColors.primary;
+    if (complianceRate >= 70) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  String _getComplianceLevel() {
+    if (complianceRate >= 95) return 'Excellent';
+    if (complianceRate >= 85) return 'Good';
+    if (complianceRate >= 70) return 'Fair';
+    return 'Poor';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final complianceColor = _getComplianceColor();
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Worker photo or placeholder
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: photoUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: const Icon(
+                          Icons.person,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person_outline,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Worker info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: styles.AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.shield, color: complianceColor, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${complianceRate.toStringAsFixed(0)}% ${_getComplianceLevel()}',
+                          style: styles.AppTextStyles.bodySmall.copyWith(
+                            color: complianceColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Violation count badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: violationCount > 0
+                      ? AppColors.error.withValues(alpha: 0.15)
+                      : AppColors.success.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: violationCount > 0
+                        ? AppColors.error.withValues(alpha: 0.5)
+                        : AppColors.success.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '$violationCount',
+                      style: styles.AppTextStyles.bodyLarge.copyWith(
+                        color: violationCount > 0
+                            ? AppColors.error
+                            : AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Violations',
+                      style: styles.AppTextStyles.bodySmall.copyWith(
+                        color: violationCount > 0
+                            ? AppColors.error
+                            : AppColors.success,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Arrow icon
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

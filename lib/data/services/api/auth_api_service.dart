@@ -10,6 +10,7 @@ class AuthApiService {
   /// User login
   ///
   /// Returns user data on success, throws exception on failure.
+  /// If role='worker', includes worker profile data.
   Future<Map<String, dynamic>> login({
     required String username,
     required String password,
@@ -23,7 +24,19 @@ class AuthApiService {
         },
       );
 
-      return response.data['user'] as Map<String, dynamic>;
+      // Return full response data including token and worker profile if available
+      final data = response.data as Map<String, dynamic>;
+      final result = <String, dynamic>{
+        'user': data['user'] as Map<String, dynamic>,
+        if (data['token'] != null) 'token': data['token'] as String,
+      };
+
+      // Include worker data if present (for worker role)
+      if (data.containsKey('worker')) {
+        result['worker'] = data['worker'] as Map<String, dynamic>;
+      }
+
+      return result;
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -97,6 +110,32 @@ class AuthApiService {
           'new_password_confirm': newPassword,
         },
       );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Create worker account (admin only)
+  ///
+  /// Creates a User account with role='worker' and links it to an existing Worker.
+  Future<Map<String, dynamic>> createWorkerAccount({
+    required String workerId,
+    required String username,
+    required String password,
+    String? email,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/api/auth/workers/create-account/',
+        data: {
+          'worker_id': workerId,
+          'username': username,
+          'password': password,
+          if (email != null) 'email': email,
+        },
+      );
+
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

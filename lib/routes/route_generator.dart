@@ -10,6 +10,14 @@ import '../presentation/screens/reports_screen.dart';
 import '../presentation/screens/alert_config_screen.dart';
 import '../presentation/screens/instructions_screen.dart';
 import '../presentation/screens/settings_screen.dart';
+import '../presentation/screens/login_screen.dart';
+import '../presentation/screens/worker_home_screen.dart';
+import '../presentation/screens/worker_notifications_screen.dart';
+import '../presentation/screens/worker_violations_screen.dart';
+import '../presentation/screens/coming_soon_screen.dart';
+import '../presentation/screens/worker_monitor_screen.dart';
+import '../presentation/screens/workers_list_screen.dart';
+import '../presentation/screens/worker_details_screen.dart';
 
 class AppRouteGenerator {
   static GetPage unknownRoute() =>
@@ -18,7 +26,9 @@ class AppRouteGenerator {
   static List<GetPage> routes() => [
     // Splash screen
     GetPage(name: AppRoutes.SPLASH, page: () => const SplashScreen()),
-    // Home screen
+    // Login screen (unified for admin and worker)
+    GetPage(name: AppRoutes.LOGIN, page: () => const LoginScreen()),
+    // Home screen (admin)
     GetPage(name: AppRoutes.HOME, page: () => const HomeScreen()),
     // Monitoring screen
     GetPage(name: AppRoutes.MONITORING, page: () => const MonitoringScreen()),
@@ -32,13 +42,39 @@ class AppRouteGenerator {
     GetPage(name: AppRoutes.ALERT_CONFIG, page: () => const AlertConfigScreen()),
     // Instructions screen
     GetPage(name: AppRoutes.INSTRUCTIONS, page: () => const InstructionsScreen()),
+    // Worker Monitor screen
+    GetPage(name: AppRoutes.WORKER_MONITOR, page: () => const WorkerMonitorScreen()),
     // Settings screen
     GetPage(name: AppRoutes.SETTINGS, page: () => const SettingsScreen()),
+    // Coming Soon placeholder
+    GetPage(
+      name: AppRoutes.COMING_SOON,
+      page: () => ComingSoonScreen(
+        icon: Get.parameters['icon'] == 'monitoring'
+            ? Icons.videocam
+            : Get.parameters['icon'] == 'thresholds'
+                ? Icons.warning
+                : Icons.build,
+        featureName: Get.parameters['title'] ?? 'Feature',
+        description: Get.parameters['description'],
+      ),
+    ),
+    // Workers List screen
+    GetPage(name: AppRoutes.WORKERS_LIST, page: () => const WorkersListScreen()),
+    // Worker Details screen
+    GetPage(
+      name: AppRoutes.WORKER_DETAILS,
+      page: () => WorkerDetailsScreen(workerId: Get.parameters['id'] ?? ''),
+    ),
+    // Worker screens (worker role)
+    GetPage(name: AppRoutes.WORKER_HOME, page: () => const WorkerHomeScreen()),
+    GetPage(name: AppRoutes.WORKER_NOTIFICATIONS, page: () => const WorkerNotificationsScreen()),
+    GetPage(name: AppRoutes.WORKER_VIOLATIONS, page: () => const WorkerViolationsScreen()),
   ];
 }
 
 class _UnknownScreen extends StatelessWidget {
-  const _UnknownScreen({super.key});
+  const _UnknownScreen();
 
   @override
   Widget build(BuildContext context) {

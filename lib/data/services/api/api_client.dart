@@ -61,6 +61,17 @@ class ApiClient {
   /// Private constructor
   const ApiClient._({required this.dio, required this.baseUrl});
 
+  /// Sets the auth token for all subsequent requests.
+  /// Uses DRF TokenAuthentication: `Authorization: Token <key>`
+  void setAuthToken(String token) {
+    dio.options.headers['Authorization'] = 'Token $token';
+  }
+
+  /// Clears the auth token.
+  void clearAuthToken() {
+    dio.options.headers.remove('Authorization');
+  }
+
   /// Performs a GET request.
   Future<Response<T>> get<T>(
     String path, {

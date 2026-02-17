@@ -135,6 +135,12 @@ class DetectionOverlay extends StatelessWidget {
           overlayColor: AppColors.violationOverlay,
           backgroundColor: AppColors.error,
         );
+      case ComplianceStatus.unknown:
+        return _DetectionConfig(
+          borderColor: AppColors.error,
+          overlayColor: AppColors.violationOverlay,
+          backgroundColor: AppColors.error,
+        );
     }
   }
 }

@@ -43,16 +43,41 @@ class Worker extends Equatable {
   /// Creates a Worker instance from JSON data.
   factory Worker.fromJson(Map<String, dynamic> json) {
     return Worker(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      department: json['department'] as String,
-      jobTitle: json['jobTitle'] as String,
-      requiredPpe: (json['requiredPpe'] as List)
-          .map((e) => PPEType.values.byName(e as String))
-          .toList(),
+      id: json['worker_id'] as String? ?? json['id'] as String,
+      fullName: json['name'] as String? ?? json['fullName'] as String,
+      department: json['department'] as String? ?? '',
+      jobTitle: json['position'] as String? ?? json['jobTitle'] as String? ?? '',
+      requiredPpe: json['required_ppe'] != null
+          ? (json['required_ppe'] as List)
+              .map((e) => _parsePPEType(e as String))
+              .toList()
+          : (json['requiredPpe'] as List?)
+              ?.map((e) => _parsePPEType(e as String))
+              .toList() ?? [],
       faceId: json['faceId'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'] as String)
+              : DateTime.now(),
       violationCount: json['violationCount'] as int? ?? 0,
+    );
+  }
+
+  /// Parse PPE type from string, handling backend naming
+  static PPEType _parsePPEType(String value) {
+    // Map backend PPE names to enum values
+    final mapping = {
+      'hardHat': PPEType.hardHat,
+      'safetyGlasses': PPEType.safetyGlasses,
+      'vest': PPEType.vest,
+      'gloves': PPEType.gloves,
+      'steelToedBoots': PPEType.steelToedBoots,
+      'earProtection': PPEType.earProtection,
+    };
+    return mapping[value] ?? PPEType.values.firstWhere(
+      (e) => e.name.toLowerCase() == value.toLowerCase(),
+      orElse: () => PPEType.hardHat,
     );
   }
 

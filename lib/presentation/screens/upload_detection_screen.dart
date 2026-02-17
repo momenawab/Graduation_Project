@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../controllers/upload_controller.dart';
 import '../widgets/common/app_button.dart';
 import '../widgets/common/top_app_bar.dart';
-import '../widgets/ppe_indicators/compliance_badge.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/models/detection_result.dart';
@@ -427,6 +426,8 @@ class UploadDetectionScreen extends GetView<UploadController> {
         return AppColors.warning;
       case ComplianceStatus.nonCompliant:
         return AppColors.error;
+      case ComplianceStatus.unknown:
+        return AppColors.textSecondary;
     }
   }
 
@@ -439,6 +440,8 @@ class UploadDetectionScreen extends GetView<UploadController> {
         return Icons.warning;
       case ComplianceStatus.nonCompliant:
         return Icons.cancel;
+      case ComplianceStatus.unknown:
+        return Icons.help_outline;
     }
   }
 
@@ -451,6 +454,8 @@ class UploadDetectionScreen extends GetView<UploadController> {
         return 'Partial';
       case ComplianceStatus.nonCompliant:
         return 'Violation';
+      case ComplianceStatus.unknown:
+        return 'Unknown';
     }
   }
 

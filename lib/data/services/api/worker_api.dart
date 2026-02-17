@@ -1,51 +1,72 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import '../../models/worker.dart';
 import 'api_client.dart';
+import 'package:safesight/core/constants/api_constants.dart';
 
-/// Worker API stub with methods for worker management.
-///
-/// This is a stub implementation that returns mock data.
-/// In production, this would make actual HTTP requests to the backend API.
+/// Worker API service for worker-related operations.
 class WorkerApi {
   /// The API client instance
   final ApiClient apiClient;
 
   /// Creates a new WorkerApi instance.
-  WorkerApi({required this.apiClient});
+  WorkerApi({required this.apiClient}) : dio = apiClient.dio;
+
+  /// Dio instance for direct API calls
+  final Dio dio;
 
   /// Gets a list of all workers.
   Future<List<Worker>> getWorkers() async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.get<List<dynamic>>('/workers');
-    // return response.data.map((json) => Worker.fromJson(json)).toList();
+    try {
+      final response = await dio.get(
+        ApiConstants.workers.fullPath,
+      );
 
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [];
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data as List<dynamic>;
+        return data.map((json) {
+          return Worker.fromJson(json as Map<String, dynamic>);
+        }).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
   /// Gets a single worker by ID.
   Future<Worker> getWorker(String id) async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.get<Map<String, dynamic>>('/workers/$id');
-    // return Worker.fromJson(response.data);
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}/workers/$id/',
+      );
 
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
-    throw Exception('Worker not found');
+      if (response.statusCode == 200) {
+        return Worker.fromJson(response.data as Map<String, dynamic>);
+      }
+      throw Exception('Worker not found');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
   /// Creates a new worker.
   Future<Worker> createWorker(Worker worker) async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.post<Map<String, dynamic>>(
-    //   '/workers',
-    //   data: worker.toJson(),
-    // );
-    // return Worker.fromJson(response.data);
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
-    return worker;
+    try {
+      final response = await dio.post(
+        ApiConstants.workers.fullPath,
+        data: {
+          'worker_id': worker.id,
+          'name': worker.fullName,
+          'department': worker.department,
+          'position': worker.jobTitle,
+          'required_ppe': worker.requiredPpe.map((e) => e.name).toList(),
+        },
+      );
+      return Worker.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
   /// Updates an existing worker.
@@ -105,5 +126,119 @@ class WorkerApi {
       'Officer',
       'Manager',
     ];
+  }
+
+  /// Gets a worker by worker_id (the custom 8-digit ID).
+  Future<Map<String, dynamic>> getWorkerByWorkerId(String workerId) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}${ApiConstants.workerById}$workerId/',
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Gets violations for a specific worker.
+  Future<Map<String, dynamic>> getWorkerViolations(String workerId) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}${ApiConstants.workerViolations}$workerId/',
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Gets overall worker statistics for reports.
+  Future<Map<String, dynamic>> getWorkerStats() async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}/workers/stats/',
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Gets worker violations summary for reports.
+  Future<List<dynamic>> getViolationsSummary() async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}/workers/violations-summary/',
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Creates a new worker with a face photo for face recognition.
+  Future<Map<String, dynamic>> addWorkerWithPhoto({
+    required String workerId,
+    required String name,
+    required File photo,
+    String? department,
+    String? position,
+    List<String>? requiredPpe,
+    String? email,
+    String? phone,
+  }) async {
+    try {
+      final fileBytes = await photo.readAsBytes();
+      final formData = FormData.fromMap({
+        'worker_id': workerId,
+        'name': name,
+        'photo': MultipartFile.fromBytes(
+          fileBytes,
+          filename: photo.path.split('/').last,
+        ),
+        if (department != null) 'department': department,
+        if (position != null) 'position': position,
+        if (requiredPpe != null) 'required_ppe': requiredPpe.join(','),
+        if (email != null) 'email': email,
+        if (phone != null) 'phone': phone,
+      });
+
+      final response = await dio.post(
+        ApiConstants.workerAddWithPhoto.fullPath,
+        data: formData,
+        options: Options(
+          contentType: Headers.multipartFormDataContentType,
+        ),
+      );
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Exception _handleError(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return Exception('Connection timeout');
+
+      case DioExceptionType.badResponse:
+        final message = error.response?.data?['detail'] ??
+            error.response?.data?['message'] ??
+            'Request failed';
+        return Exception('Error ${error.response?.statusCode}: $message');
+
+      case DioExceptionType.cancel:
+        return Exception('Request was cancelled');
+
+      case DioExceptionType.connectionError:
+        return Exception('Cannot connect to server');
+
+      case DioExceptionType.unknown:
+      default:
+        return Exception('An error occurred: ${error.message}');
+    }
   }
 }

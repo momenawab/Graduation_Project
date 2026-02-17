@@ -91,7 +91,7 @@ class BottomNavBar extends StatelessWidget {
         Get.offAllNamed(AppRoutes.HOME);
         break;
       case 1:
-        Get.offAllNamed(AppRoutes.MONITORING);
+        Get.offAllNamed(AppRoutes.WORKERS_LIST);
         break;
       case 2:
         Get.offAllNamed(AppRoutes.REPORTS);
