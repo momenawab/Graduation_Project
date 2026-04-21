@@ -2,6 +2,7 @@ abstract class AppRoutes {
   static const String SPLASH = '/';
   static const String HOME = '/home';
   static const String MONITORING = '/monitoring';
+  static const String VIDEO_TEST = '/video-test';
   static const String ADD_WORKER = '/worker/add';
   static const String UPLOAD_DETECTION = '/upload';
   static const String REPORTS = '/reports';

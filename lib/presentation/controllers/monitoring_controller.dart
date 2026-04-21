@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:camera/camera.dart';
 import 'package:get/get.dart';
 
+import '../../core/utils/camera_image_converter.dart';
 import '../../data/models/detection_result.dart';
 import '../../data/models/ppe_item.dart';
 import '../../data/services/websocket/detection_stream.dart';
@@ -48,6 +50,14 @@ class MonitoringController extends GetxController {
   RxBool isWebSocketConnected = false.obs;
   RxBool isReconnecting = false.obs;
 
+  // Frame streaming state
+  static const int _targetFps = 5;
+  bool _isSending = false;
+  bool _isStreamingFrames = false;
+  DateTime _lastSentAt = DateTime.fromMillisecondsSinceEpoch(0);
+  RxInt frameWidth = 0.obs;
+  RxInt frameHeight = 0.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -90,7 +100,9 @@ class MonitoringController extends GetxController {
         camera,
         ResolutionPreset.high,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.yuv420
+            : ImageFormatGroup.bgra8888,
       );
 
       await _cameraController!.initialize();
@@ -105,6 +117,7 @@ class MonitoringController extends GetxController {
   /// Disposes the current camera controller.
   Future<void> _disposeCameraController() async {
     if (_cameraController != null && _cameraController!.value.isInitialized) {
+      await _stopFrameStream();
       await _cameraController!.dispose();
       _cameraController = null;
       isCameraInitialized.value = false;
@@ -149,6 +162,9 @@ class MonitoringController extends GetxController {
 
       // Connect to detection stream
       await _connectDetectionStream();
+
+      // Begin capturing and sending camera frames
+      await _startFrameStream();
     } catch (e) {
       cameraError.value = 'Failed to start monitoring: ${e.toString()}';
       isMonitoring.value = false;
@@ -163,7 +179,68 @@ class MonitoringController extends GetxController {
     _monitoringTimer?.cancel();
     _monitoringTimer = null;
 
+    await _stopFrameStream();
     await _disconnectDetectionStream();
+  }
+
+  /// Starts the camera image stream and forwards frames to the detection socket.
+  Future<void> _startFrameStream() async {
+    final cam = _cameraController;
+    if (cam == null || !cam.value.isInitialized || _isStreamingFrames) return;
+
+    try {
+      await cam.startImageStream(_onCameraImage);
+      _isStreamingFrames = true;
+    } catch (e) {
+      cameraError.value = 'Failed to start image stream: $e';
+    }
+  }
+
+  /// Stops the camera image stream if running.
+  Future<void> _stopFrameStream() async {
+    final cam = _cameraController;
+    if (cam == null || !_isStreamingFrames) return;
+
+    try {
+      if (cam.value.isStreamingImages) {
+        await cam.stopImageStream();
+      }
+    } catch (_) {
+      // Best-effort: camera may already be disposing.
+    } finally {
+      _isStreamingFrames = false;
+      _isSending = false;
+    }
+  }
+
+  /// Handles each camera frame: throttled, backpressured encode + send.
+  void _onCameraImage(CameraImage image) {
+    if (frameWidth.value == 0) {
+      frameWidth.value = image.width;
+      frameHeight.value = image.height;
+    }
+
+    if (_isSending) return;
+    if (!isWebSocketConnected.value) return;
+
+    final now = DateTime.now();
+    final minGap = Duration(milliseconds: 1000 ~/ _targetFps);
+    if (now.difference(_lastSentAt) < minGap) return;
+
+    _isSending = true;
+    _lastSentAt = now;
+
+    try {
+      final bytes = CameraImageConverter.cameraImageToJpeg(image);
+      if (bytes != null && _detectionStream != null) {
+        _detectionStream!.sendFrameBytes(bytes);
+      }
+    } catch (e) {
+      // Transient encode/send failures shouldn't tear down the session.
+      cameraError.value = 'Frame encode failed: $e';
+    } finally {
+      _isSending = false;
+    }
   }
 
   /// Connects to the WebSocket detection stream.
@@ -302,6 +379,7 @@ class MonitoringController extends GetxController {
     _monitoringTimer = null;
     _detectionSubscription?.cancel();
     _detectionSubscription = null;
+    _stopFrameStream();
     _disposeCameraController();
     _disconnectDetectionStream();
   }

@@ -8,6 +8,7 @@ import '../../data/services/api/worker_api.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/websocket/notification_stream.dart';
 import '../../presentation/controllers/monitoring_controller.dart';
+import '../../presentation/controllers/video_test_controller.dart';
 import '../../presentation/controllers/upload_controller.dart';
 import '../../presentation/controllers/worker_controller.dart';
 import '../../presentation/controllers/reports_controller.dart';
@@ -41,6 +42,7 @@ class GlobalBinding extends Bindings {
     Get.lazyPut<SplashController>(() => SplashController());
     Get.lazyPut<LoginController>(() => LoginController(), fenix: true);
     Get.lazyPut<MonitoringController>(() => MonitoringController());
+    Get.lazyPut<VideoTestController>(() => VideoTestController(), fenix: true);
     // Use fenix: true to recreate controller if it was disposed
     Get.lazyPut<UploadController>(() => UploadController(), fenix: true);
     Get.lazyPut<WorkerController>(() => WorkerController());

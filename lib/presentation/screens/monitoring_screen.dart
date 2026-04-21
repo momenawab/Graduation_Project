@@ -7,6 +7,7 @@ import '../widgets/ppe_indicators/detection_overlay.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/text_styles.dart' as styles;
 import '../../data/models/detection_result.dart';
+import '../../routes/app_routes.dart';
 
 /// Real-time safety monitoring screen with camera feed and PPE detection overlays.
 class MonitoringScreen extends GetView<MonitoringController> {
@@ -165,10 +166,17 @@ class MonitoringScreen extends GetView<MonitoringController> {
           detections: detections,
         );
 
+        // Use actual camera frame dimensions so normalized bounding boxes
+        // scale correctly. Fall back to screen size until the first frame
+        // arrives. TODO: account for preview letterboxing when the preview
+        // aspect ratio differs from the frame.
+        final screenSize = MediaQuery.of(Get.context!).size;
+        final fw = controller.frameWidth.value;
+        final fh = controller.frameHeight.value;
         return DetectionOverlay(
           detectionResult: detectionResult,
-          imageWidth: MediaQuery.of(Get.context!).size.width,
-          imageHeight: MediaQuery.of(Get.context!).size.height,
+          imageWidth: fw > 0 ? fw.toDouble() : screenSize.width,
+          imageHeight: fh > 0 ? fh.toDouble() : screenSize.height,
         );
       }),
     );
@@ -295,15 +303,10 @@ class MonitoringScreen extends GetView<MonitoringController> {
   /// Builds the settings button.
   Widget _buildSettingsButton() {
     return IconButton(
-      onPressed: () {
-        // TODO: Navigate to settings
-        Get.snackbar(
-          'Settings',
-          'Settings functionality coming soon',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      },
-      icon: const Icon(Icons.settings, color: AppColors.textPrimary, size: 28),
+      onPressed: () => Get.toNamed(AppRoutes.VIDEO_TEST),
+      icon: const Icon(Icons.movie_outlined,
+          color: AppColors.textPrimary, size: 28),
+      tooltip: 'Test with video',
       style: IconButton.styleFrom(
         backgroundColor: AppColors.cardBackground,
         padding: const EdgeInsets.all(12),

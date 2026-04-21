@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/report_data.dart';
 import '../../data/services/api/worker_api.dart';
-
+import 'package:dio/dio.dart';
 /// Data model for worker violation stats.
 @immutable
 class WorkerViolationStats {
@@ -151,6 +151,21 @@ class ReportsController extends GetxController {
 
       return ChartDataPoint(label: dayLabel, value: compliance.roundToDouble());
     }).toList();
+  }
+
+  void _handleDioError(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        break;
+      case DioExceptionType.badResponse:
+        break;
+      case DioExceptionType.connectionError:
+        break;
+      default:
+        break;
+    }
   }
 
   /// Toggles live updates on/off.

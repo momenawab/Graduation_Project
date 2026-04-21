@@ -4,6 +4,7 @@ import 'app_routes.dart';
 import '../presentation/screens/splash_screen.dart';
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/monitoring_screen.dart';
+import '../presentation/screens/video_test_screen.dart';
 import '../presentation/screens/add_worker_screen.dart';
 import '../presentation/screens/upload_detection_screen.dart';
 import '../presentation/screens/reports_screen.dart';
@@ -32,6 +33,8 @@ class AppRouteGenerator {
     GetPage(name: AppRoutes.HOME, page: () => const HomeScreen()),
     // Monitoring screen
     GetPage(name: AppRoutes.MONITORING, page: () => const MonitoringScreen()),
+    // Video Test screen
+    GetPage(name: AppRoutes.VIDEO_TEST, page: () => const VideoTestScreen()),
     // Add Worker screen
     GetPage(name: AppRoutes.ADD_WORKER, page: () => const AddWorkerScreen()),
     // Upload Detection screen
