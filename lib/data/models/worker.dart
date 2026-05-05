@@ -47,13 +47,7 @@ class Worker extends Equatable {
       fullName: json['name'] as String? ?? json['fullName'] as String,
       department: json['department'] as String? ?? '',
       jobTitle: json['position'] as String? ?? json['jobTitle'] as String? ?? '',
-      requiredPpe: json['required_ppe'] != null
-          ? (json['required_ppe'] as List)
-              .map((e) => _parsePPEType(e as String))
-              .toList()
-          : (json['requiredPpe'] as List?)
-              ?.map((e) => _parsePPEType(e as String))
-              .toList() ?? [],
+      requiredPpe: _parseRequiredPpe(json['required_ppe'] ?? json['requiredPpe']),
       faceId: json['faceId'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
@@ -62,6 +56,26 @@ class Worker extends Equatable {
               : DateTime.now(),
       violationCount: json['violationCount'] as int? ?? 0,
     );
+  }
+
+  /// Parse the `required_ppe` field, which may arrive as a List or a CSV String
+  /// (the add-with-photo endpoint uploads it as a comma-joined string and the
+  /// backend stores it raw in a JSONField).
+  static List<PPEType> _parseRequiredPpe(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw.map((e) => _parsePPEType(e.toString())).toList();
+    }
+    if (raw is String) {
+      if (raw.isEmpty) return const [];
+      return raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .map(_parsePPEType)
+          .toList();
+    }
+    return const [];
   }
 
   /// Parse PPE type from string, handling backend naming

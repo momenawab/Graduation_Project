@@ -1,11 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:safesight/core/constants/api_constants.dart';
 import '../../data/services/api/api_client.dart';
 import '../../data/services/api/detection_api_service.dart';
 import '../../data/services/api/auth_api_service.dart';
 import '../../data/services/api/worker_api.dart';
-import '../../data/services/storage_service.dart';
 import '../../data/services/websocket/notification_stream.dart';
 import '../../presentation/controllers/monitoring_controller.dart';
 import '../../presentation/controllers/video_test_controller.dart';
@@ -41,14 +39,14 @@ class GlobalBinding extends Bindings {
     // Controllers
     Get.lazyPut<SplashController>(() => SplashController());
     Get.lazyPut<LoginController>(() => LoginController(), fenix: true);
-    Get.lazyPut<MonitoringController>(() => MonitoringController());
+    Get.lazyPut<MonitoringController>(() => MonitoringController(), fenix: true);
     Get.lazyPut<VideoTestController>(() => VideoTestController(), fenix: true);
     // Use fenix: true to recreate controller if it was disposed
     Get.lazyPut<UploadController>(() => UploadController(), fenix: true);
-    Get.lazyPut<WorkerController>(() => WorkerController());
-    Get.lazyPut<ReportsController>(() => ReportsController());
-    Get.lazyPut<AlertConfigController>(() => AlertConfigController());
-    Get.lazyPut<SettingsController>(() => SettingsController());
+    Get.lazyPut<WorkerController>(() => WorkerController(), fenix: true);
+    Get.lazyPut<ReportsController>(() => ReportsController(), fenix: true);
+    Get.lazyPut<AlertConfigController>(() => AlertConfigController(), fenix: true);
+    Get.lazyPut<SettingsController>(() => SettingsController(), fenix: true);
     Get.lazyPut<WorkerHomeController>(() => WorkerHomeController(), fenix: true);
   }
 }

@@ -1,5 +1,4 @@
 import '../../models/report_data.dart';
-import '../../models/worker.dart';
 import 'api_client.dart';
 
 /// Report API stub with methods for reports and analytics.

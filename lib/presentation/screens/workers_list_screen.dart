@@ -4,7 +4,6 @@ import '../controllers/workers_list_controller.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/bottom_nav_bar.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/theme/text_styles.dart' as styles;
 import '../../data/models/worker.dart' as model;
 import '../../routes/app_routes.dart';

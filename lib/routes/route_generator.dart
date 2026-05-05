@@ -19,6 +19,7 @@ import '../presentation/screens/coming_soon_screen.dart';
 import '../presentation/screens/worker_monitor_screen.dart';
 import '../presentation/screens/workers_list_screen.dart';
 import '../presentation/screens/worker_details_screen.dart';
+import '../presentation/screens/power_bi_report_screen.dart';
 
 class AppRouteGenerator {
   static GetPage unknownRoute() =>
@@ -62,6 +63,8 @@ class AppRouteGenerator {
         description: Get.parameters['description'],
       ),
     ),
+    // Power BI embedded dashboard
+    GetPage(name: AppRoutes.POWER_BI, page: () => const PowerBiReportScreen()),
     // Workers List screen
     GetPage(name: AppRoutes.WORKERS_LIST, page: () => const WorkersListScreen()),
     // Worker Details screen

@@ -18,6 +18,9 @@ abstract class AppRoutes {
   static const String WORKERS_LIST = '/workers';
   static const String WORKER_DETAILS = '/workers/:id';
 
+  // Power BI embedded dashboard
+  static const String POWER_BI = '/power-bi';
+
   // Auth routes
   static const String LOGIN = '/login';
 

@@ -473,13 +473,28 @@ class MonitoringScreen extends GetView<MonitoringController> {
               }),
               const SizedBox(height: 24),
               ElevatedButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.VIDEO_TEST),
+                icon: const Icon(Icons.movie_outlined, color: Colors.white),
+                label: const Text(
+                  'Use Video Instead',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
                 onPressed: () {
                   Get.back();
                 },
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Go Back'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.cardBackground,
+                  foregroundColor: AppColors.textPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,

@@ -179,20 +179,32 @@ class VideoTestScreen extends GetView<VideoTestController> {
 
       return LayoutBuilder(
         builder: (ctx, constraints) {
+          // Compute the actual display size respecting the aspect ratio
+          final aspectRatio = imgW / imgH;
+          final availW = constraints.maxWidth;
+          final availH = constraints.maxHeight;
+          double displayW, displayH;
+          if (availW / availH > aspectRatio) {
+            displayH = availH;
+            displayW = availH * aspectRatio;
+          } else {
+            displayW = availW;
+            displayH = availW / aspectRatio;
+          }
+
           return Center(
-            child: AspectRatio(
-              aspectRatio: imgW / imgH,
+            child: SizedBox(
+              width: displayW,
+              height: displayH,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.memory(frame, gaplessPlayback: true,
-                      fit: BoxFit.contain),
-                  Positioned.fill(
-                    child: DetectionOverlay(
-                      detectionResult: result,
-                      imageWidth: imgW,
-                      imageHeight: imgH,
-                    ),
+                  Image.memory(frame, gaplessPlayback: true, fit: BoxFit.fill),
+                  // Pass display dimensions so bounding boxes align with pixels on screen
+                  DetectionOverlay(
+                    detectionResult: result,
+                    imageWidth: displayW,
+                    imageHeight: displayH,
                   ),
                 ],
               ),

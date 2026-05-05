@@ -6,8 +6,8 @@ class ApiConstants {
   /// For iOS simulator: use 'localhost' or '127.0.0.1'
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://138.199.148.126',
-  //defaultValue: 'http://127.0.0.1:8000',
+  //  defaultValue: 'http://138.199.148.126',
+  defaultValue: 'http://127.0.0.1:8000',
   );
 
   /// WebSocket URL for real-time detection
@@ -28,6 +28,7 @@ class ApiConstants {
   static const String detectionRecords = '/detection/records/';
   static const String detectionViolations = '/detection/violations/';
   static const String detectionHealth = '/detection/health/';
+  static const String detectionDashboard = '/detection/dashboard-stats/';
   static const String detectionSessions = '/detection/sessions/';
 
   // WebSocket endpoint

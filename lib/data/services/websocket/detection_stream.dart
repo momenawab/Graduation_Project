@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:get/get.dart';
-import 'package:meta/meta.dart';
 import 'package:image/image.dart' as img;
 import 'package:safesight/core/constants/api_constants.dart';
 import '../../models/detection_result.dart';

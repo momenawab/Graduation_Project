@@ -23,7 +23,13 @@ class WorkerApi {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
+        final body = response.data;
+        // DRF may paginate ({count, next, previous, results}) or return a bare list.
+        final List<dynamic> data = body is List
+            ? body
+            : (body is Map && body['results'] is List)
+                ? body['results'] as List<dynamic>
+                : const <dynamic>[];
         return data.map((json) {
           return Worker.fromJson(json as Map<String, dynamic>);
         }).toList();
@@ -144,7 +150,7 @@ class WorkerApi {
   Future<Map<String, dynamic>> getWorkerViolations(String workerId) async {
     try {
       final response = await dio.get(
-        '${ApiConstants.apiPath}${ApiConstants.workerViolations}$workerId/',
+        '${ApiConstants.apiPath}/workers/$workerId/violations/',
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -225,9 +231,10 @@ class WorkerApi {
         return Exception('Connection timeout');
 
       case DioExceptionType.badResponse:
-        final message = error.response?.data?['detail'] ??
-            error.response?.data?['message'] ??
-            'Request failed';
+        final data = error.response?.data;
+        final message = data is Map
+            ? (data['detail'] ?? data['message'] ?? 'Request failed')
+            : 'Request failed';
         return Exception('Error ${error.response?.statusCode}: $message');
 
       case DioExceptionType.cancel:

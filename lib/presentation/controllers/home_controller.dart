@@ -25,11 +25,9 @@ class HomeController extends GetxController {
   /// Observable for loading state
   final RxBool isLoading = false.obs;
 
-  /// Navigates to monitoring screen (Coming Soon placeholder).
+  /// Navigates to monitoring screen.
   void navigateToMonitoring() {
-    Get.toNamed(
-      '${AppRoutes.COMING_SOON}?icon=monitoring&title=Monitoring&description=Real-time PPE monitoring and detection streaming will be available soon.',
-    );
+    Get.toNamed(AppRoutes.MONITORING);
   }
 
   /// Navigates to add worker screen.

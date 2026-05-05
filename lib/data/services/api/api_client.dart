@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:meta/meta.dart';
+
+import '../storage_service.dart';
 
 /// Dio HTTP client wrapper with 30 second timeout, interceptors, and error handling.
 @immutable
@@ -35,6 +38,24 @@ class ApiClient {
         // Don't set Content-Type globally - Dio will set it correctly
         // based on the data type (application/json for JSON,
         // multipart/form-data with boundary for FormData)
+      ),
+    );
+
+    // Attach the auth token from persistent storage on every request, so a
+    // recreated ApiClient (fenix) or a stale captured Dio reference still
+    // sends Authorization. Header set via setAuthToken still wins if present.
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.headers['Authorization'] == null &&
+              Get.isRegistered<StorageService>()) {
+            final token = Get.find<StorageService>().authToken;
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Token $token';
+            }
+          }
+          handler.next(options);
+        },
       ),
     );
 

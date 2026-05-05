@@ -51,6 +51,10 @@ class VideoTestController extends GetxController {
 
   bool _abort = false;
 
+  // How many consecutive empty frames before clearing the last detection
+  static const int _emptyFramesToClear = 10;
+  int _emptyFrameCount = 0;
+
   @override
   void onClose() {
     _abort = true;
@@ -163,10 +167,23 @@ class VideoTestController extends GetxController {
   }
 
   void _handleDetectionResult(DetectionResult result) {
-    currentDetection.value = result;
-    detectedCount.value = result.detected;
-    compliantCount.value = result.compliant;
-    nonCompliantCount.value = result.nonCompliant;
+    if (result.detected > 0) {
+      // New detection — update everything and reset empty counter
+      _emptyFrameCount = 0;
+      currentDetection.value = result;
+      detectedCount.value = result.detected;
+      compliantCount.value = result.compliant;
+      nonCompliantCount.value = result.nonCompliant;
+    } else {
+      // Empty frame — only clear after enough consecutive empty frames
+      _emptyFrameCount++;
+      if (_emptyFrameCount >= _emptyFramesToClear) {
+        currentDetection.value = result;
+        detectedCount.value = 0;
+        compliantCount.value = 0;
+        nonCompliantCount.value = 0;
+      }
+    }
   }
 
   String formatMs(int ms) {

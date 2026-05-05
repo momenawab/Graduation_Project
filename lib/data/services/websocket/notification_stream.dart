@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'package:meta/meta.dart';
 import '../../models/notification.dart' as models;
 import 'stream_client.dart';
 import 'package:safesight/core/constants/api_constants.dart';
