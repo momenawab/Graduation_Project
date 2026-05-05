@@ -2,56 +2,73 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/reports_controller.dart';
-import '../widgets/common/app_card.dart';
 import '../widgets/common/bottom_nav_bar.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
-import '../../core/theme/text_styles.dart' as styles;
 import '../../routes/app_routes.dart';
+
+// ── Colour palette matching the Power BI dark theme ──────────────────────────
+const _bgColor = Color(0xFF0E1117);
+const _cardColor = Color(0xFF1A1F2E);
+const _borderBlue = Color(0xFF3B82F6);
+const _borderYellow = Color(0xFFF59E0B);
+const _borderGreen = Color(0xFF10B981);
+const _borderRed = Color(0xFFEF4444);
+const _textPrimary = Color(0xFFE2E8F0);
+const _textSecondary = Color(0xFF8892A4);
+const _chartBlue = Color(0xFF60A5FA);
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ReportsController());
+    final c = Get.put(ReportsController());
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: _bgColor,
+      drawer: _FilterDrawer(controller: c),
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(controller),
+            _Header(controller: c),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await controller.loadReportData();
-                  await controller.loadWorkerStats();
-                },
-                color: AppColors.primary,
-                backgroundColor: AppColors.cardBackground,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SummaryCards(controller: controller),
-                      const SizedBox(height: 16),
-                      _LiveToggle(controller: controller),
-                      const SizedBox(height: 16),
-                      _ComplianceTrendChart(controller: controller),
-                      const SizedBox(height: 16),
-                      _ViolationsBarChart(controller: controller),
-                      const SizedBox(height: 16),
-                      _DepartmentPieChart(controller: controller),
-                      const SizedBox(height: 16),
-                      _WorkerViolationsList(controller: controller),
-                      const SizedBox(height: 8),
-                    ],
+              child: Obx(() {
+                if (c.isLoading.value) {
+                  return const Center(
+                      child: CircularProgressIndicator(color: _borderBlue));
+                }
+                return RefreshIndicator(
+                  onRefresh: c.loadAll,
+                  color: _borderBlue,
+                  backgroundColor: _cardColor,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _KpiRow(controller: c),
+                        const SizedBox(height: 12),
+                        _TimelineCard(controller: c),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                flex: 55,
+                                child: _HorizontalBarCard(controller: c)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                                flex: 45,
+                                child: _PieCard(controller: c)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _WorkerList(controller: c),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
             ),
             const BottomNavBar(currentIndex: 2),
           ],
@@ -59,706 +76,726 @@ class ReportsScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildAppBar(ReportsController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+// ── Header ───────────────────────────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  const _Header({required this.controller});
+  final ReportsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: const BoxDecoration(
+        color: _cardColor,
+        border: Border(bottom: BorderSide(color: Color(0xFF2D3748), width: 1)),
+      ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Get.back(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.arrow_back,
-                  color: AppColors.textPrimary, size: 24),
+          Builder(
+            builder: (ctx) => GestureDetector(
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+              child: const Icon(Icons.tune, color: _textSecondary, size: 22),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              AppStrings.reports,
-              style: styles.AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary, fontSize: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Safety & Compliance Dashboard',
+                  style: TextStyle(
+                    color: _textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'All Sites  |  Last 90 days',
+                  style: TextStyle(
+                      color: _textSecondary.withValues(alpha: 0.8),
+                      fontSize: 11),
+                ),
+              ],
             ),
           ),
-          GestureDetector(
-            onTap: () async {
-              await controller.loadReportData();
-              await controller.loadWorkerStats();
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.refresh,
-                  color: AppColors.textPrimary, size: 22),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Summary Cards ────────────────────────────────────────────────────────────
-
-class _SummaryCards extends StatelessWidget {
-  const _SummaryCards({required this.controller});
-  final ReportsController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final report = controller.reportData.value;
-      final total = controller.totalWorkers.value;
-      final active = controller.activeWorkers.value;
-
-      return Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.warning_amber_rounded,
-              label: 'Violations',
-              value: report?.incidents.toString() ?? '—',
-              color: AppColors.error,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.shield_outlined,
-              label: 'Compliance',
-              value: report != null ? '${report.compliance}%' : '—',
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.people_outline,
-              label: 'Workers',
-              value: total > 0 ? '$active / $total' : '—',
-              color: AppColors.success,
-            ),
-          ),
-        ],
-      );
-    });
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(value,
-              style: styles.AppTextStyles.headlineLarge.copyWith(
-                  color: color, fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(label,
-              style: styles.AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary, fontSize: 11)),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Live Toggle ──────────────────────────────────────────────────────────────
-
-class _LiveToggle extends StatelessWidget {
-  const _LiveToggle({required this.controller});
-  final ReportsController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() => AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                controller.liveUpdates.value ? Icons.sync : Icons.sync_disabled,
-                color: controller.liveUpdates.value
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(AppStrings.liveUpdates,
-                    style: styles.AppTextStyles.bodyLarge
-                        .copyWith(color: AppColors.textPrimary)),
-              ),
-              GestureDetector(
+          // LIVE badge
+          Obx(() => GestureDetector(
                 onTap: controller.toggleLiveUpdates,
                 child: Container(
-                  width: 52,
-                  height: 28,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     color: controller.liveUpdates.value
-                        ? AppColors.primary
-                        : AppColors.textDisabled,
-                    borderRadius: BorderRadius.circular(14),
+                        ? _borderYellow
+                        : _cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _borderYellow, width: 1.5),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Align(
-                      alignment: controller.liveUpdates.value
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                            color: Colors.white, shape: BoxShape.circle),
-                      ),
+                  child: Text(
+                    'live',
+                    style: TextStyle(
+                      color: controller.liveUpdates.value
+                          ? Colors.black
+                          : _borderYellow,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-              ),
-            ],
+              )),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: const Icon(Icons.close, color: _textSecondary, size: 22),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Filter Drawer ─────────────────────────────────────────────────────────────
+
+class _FilterDrawer extends StatelessWidget {
+  const _FilterDrawer({required this.controller});
+  final ReportsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: _cardColor,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Obx(() {
+            final depts = controller.departments;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Filters',
+                    style: TextStyle(
+                        color: _textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(height: 20),
+                const Text('Department',
+                    style: TextStyle(
+                        color: _textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                ...depts.map((d) => _FilterItem(
+                      label: d,
+                      selected: controller.selectedDept.value == d,
+                      onTap: () {
+                        controller.selectedDept.value = d;
+                        Navigator.pop(context);
+                      },
+                    )),
+                const SizedBox(height: 20),
+                const Text('Risk Category',
+                    style: TextStyle(
+                        color: _textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                ...['All', 'High Risk', 'Moderate Risk', 'Safe'].map((r) =>
+                    _FilterItem(
+                      label: r,
+                      selected: controller.selectedRisk.value == r,
+                      onTap: () {
+                        controller.selectedRisk.value = r;
+                        Navigator.pop(context);
+                      },
+                    )),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterItem extends StatelessWidget {
+  const _FilterItem(
+      {required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                border: Border.all(color: _borderBlue, width: 1.5),
+                borderRadius: BorderRadius.circular(3),
+                color: selected ? _borderBlue : Colors.transparent,
+              ),
+              child: selected
+                  ? const Icon(Icons.check, color: Colors.white, size: 11)
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Text(label,
+                style: const TextStyle(color: _textPrimary, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── KPI Cards ─────────────────────────────────────────────────────────────────
+
+class _KpiRow extends StatelessWidget {
+  const _KpiRow({required this.controller});
+  final ReportsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Row(
+          children: [
+            Expanded(
+                child: _KpiCard(
+                    label: 'Total_Workers',
+                    value: _fmt(controller.totalWorkers.value),
+                    borderColor: _borderBlue)),
+            const SizedBox(width: 8),
+            Expanded(
+                child: _KpiCard(
+                    label: 'Total_Violations',
+                    value: _fmt(controller.totalViolations.value),
+                    borderColor: _borderYellow)),
+            const SizedBox(width: 8),
+            Expanded(
+                child: _KpiCard(
+                    label: 'Compliance_Rate',
+                    value: controller.complianceRate.value.toStringAsFixed(2),
+                    borderColor: _borderGreen)),
+            const SizedBox(width: 8),
+            Expanded(
+                child: _KpiCard(
+                    label: 'High_Risk_%',
+                    value: controller.highRiskPercent.value.toStringAsFixed(2),
+                    borderColor: _borderRed)),
+          ],
         ));
   }
+
+  String _fmt(int v) => v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}K' : '$v';
 }
 
-// ── Compliance Trend Line Chart ───────────────────────────────────────────────
+class _KpiCard extends StatelessWidget {
+  const _KpiCard(
+      {required this.label,
+      required this.value,
+      required this.borderColor});
+  final String label;
+  final String value;
+  final Color borderColor;
 
-class _ComplianceTrendChart extends StatelessWidget {
-  const _ComplianceTrendChart({required this.controller});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(color: _textSecondary, fontSize: 10),
+              overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 6),
+          Text(value,
+              style: const TextStyle(
+                  color: _textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Timeline Line Chart ───────────────────────────────────────────────────────
+
+class _TimelineCard extends StatelessWidget {
+  const _TimelineCard({required this.controller});
   final ReportsController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final data = controller.reportData.value?.chartData ?? [];
+    return _DashCard(
+      title: 'Total_Violations by Year, Month and Day',
+      child: Obx(() {
+        final data = controller.dailyViolations;
+        if (data.isEmpty) {
+          return const _EmptyChart(message: 'No violation data yet');
+        }
+        final maxY = data
+                .map((d) => d.count.toDouble())
+                .reduce((a, b) => a > b ? a : b) +
+            1;
 
-      return AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChartTitle(
-                icon: Icons.show_chart,
-                title: 'Compliance Trend (7 days)',
-                color: AppColors.primary),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 180,
-              child: data.isEmpty
-                  ? _EmptyChart(message: 'No trend data yet')
-                  : LineChart(
-                      LineChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          getDrawingHorizontalLine: (_) => FlLine(
-                            color: AppColors.textDisabled.withValues(alpha: 0.3),
-                            strokeWidth: 1,
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 36,
-                              getTitlesWidget: (v, _) => Text(
-                                '${v.toInt()}%',
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 10),
-                              ),
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (v, _) {
-                                final i = v.toInt();
-                                if (i < 0 || i >= data.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(data[i].label,
-                                      style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 10)),
-                                );
-                              },
-                            ),
-                          ),
-                          rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        minY: 0,
-                        maxY: 100,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: data.asMap().entries.map((e) {
-                              return FlSpot(
-                                  e.key.toDouble(), e.value.value);
-                            }).toList(),
-                            isCurved: true,
-                            color: AppColors.primary,
-                            barWidth: 2.5,
-                            dotData: FlDotData(
-                              show: true,
-                              getDotPainter: (spot, percent, bar, index) =>
-                                  FlDotCirclePainter(
-                                radius: 4,
-                                color: AppColors.primary,
-                                strokeWidth: 2,
-                                strokeColor: AppColors.background,
-                              ),
-                            ),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              color:
-                                  AppColors.primary.withValues(alpha: 0.1),
-                            ),
-                          ),
-                        ],
-                      ),
+        return SizedBox(
+          height: 160,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                getDrawingHorizontalLine: (_) => FlLine(
+                    color: const Color(0xFF2D3748), strokeWidth: 0.5),
+                getDrawingVerticalLine: (_) =>
+                    FlLine(
+                        color: const Color(0xFF2D3748),
+                        strokeWidth: 0.5,
+                        dashArray: [4, 4]),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  axisNameWidget: const RotatedBox(
+                    quarterTurns: 3,
+                    child: Text('Total_Violations',
+                        style: TextStyle(
+                            color: _textSecondary, fontSize: 9)),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    getTitlesWidget: (v, _) => Text(
+                      v.toInt().toString(),
+                      style: const TextStyle(
+                          color: _textSecondary, fontSize: 9),
                     ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  axisNameWidget: const Text('Year',
+                      style:
+                          TextStyle(color: _textSecondary, fontSize: 9)),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: (data.length / 5).ceilToDouble(),
+                    getTitlesWidget: (v, _) {
+                      final i = v.toInt();
+                      if (i < 0 || i >= data.length) {
+                        return const SizedBox.shrink();
+                      }
+                      final d = data[i].date;
+                      final months = [
+                        'Jan','Feb','Mar','Apr','May','Jun',
+                        'Jul','Aug','Sep','Oct','Nov','Dec'
+                      ];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '${months[d.month - 1]} ${d.year}',
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 9),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border:
+                    Border.all(color: const Color(0xFF2D3748), width: 0.5),
+              ),
+              minY: 0,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: data.asMap().entries
+                      .map((e) =>
+                          FlSpot(e.key.toDouble(), e.value.count.toDouble()))
+                      .toList(),
+                  isCurved: false,
+                  color: _chartBlue,
+                  barWidth: 1.5,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: _chartBlue.withValues(alpha: 0.15),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    });
+          ),
+        );
+      }),
+    );
   }
 }
 
-// ── Top Violations Bar Chart ──────────────────────────────────────────────────
+// ── Horizontal Bar Chart ──────────────────────────────────────────────────────
 
-class _ViolationsBarChart extends StatelessWidget {
-  const _ViolationsBarChart({required this.controller});
+class _HorizontalBarCard extends StatelessWidget {
+  const _HorizontalBarCard({required this.controller});
   final ReportsController controller;
 
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final workers = controller.workerStats
-          .where((w) => w.violationCount > 0)
-          .toList()
-        ..sort((a, b) => b.violationCount.compareTo(a.violationCount));
-      final top = workers.take(5).toList();
-
-      return AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChartTitle(
-                icon: Icons.bar_chart,
-                title: 'Top Violations by Worker',
-                color: AppColors.error),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 180,
-              child: top.isEmpty
-                  ? _EmptyChart(message: 'No violations recorded')
-                  : BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        barTouchData: BarTouchData(
-                          touchTooltipData: BarTouchTooltipData(
-                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                              final name = top[group.x].name.split(' ').first;
-                              return BarTooltipItem(
-                                '$name\n${rod.toY.toInt()} violations',
-                                const TextStyle(
-                                    color: Colors.white, fontSize: 12),
-                              );
-                            },
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 28,
-                              getTitlesWidget: (v, _) => Text(
-                                v.toInt().toString(),
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 10),
-                              ),
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (v, _) {
-                                final i = v.toInt();
-                                if (i < 0 || i >= top.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                final name =
-                                    top[i].name.split(' ').first;
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(name,
-                                      style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 10)),
-                                );
-                              },
-                            ),
-                          ),
-                          rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          getDrawingHorizontalLine: (_) => FlLine(
-                            color: AppColors.textDisabled.withValues(alpha: 0.3),
-                            strokeWidth: 1,
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: top.asMap().entries.map((e) {
-                          return BarChartGroupData(x: e.key, barRods: [
-                            BarChartRodData(
-                              toY: e.value.violationCount.toDouble(),
-                              color: AppColors.error,
-                              width: 20,
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4)),
-                            ),
-                          ]);
-                        }).toList(),
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-}
-
-// ── Department Pie Chart ──────────────────────────────────────────────────────
-
-class _DepartmentPieChart extends StatelessWidget {
-  const _DepartmentPieChart({required this.controller});
-  final ReportsController controller;
-
-  static const _colors = [
-    AppColors.primary,
-    AppColors.error,
-    AppColors.success,
-    AppColors.warning,
-    Color(0xFF9C27B0),
-    Color(0xFF00BCD4),
+  static const _barColors = [
+    _borderBlue, _borderBlue, _borderYellow, _borderBlue, _borderRed,
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final depts = controller.departmentStats;
-
-      return AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ChartTitle(
-                icon: Icons.pie_chart_outline,
-                title: 'Workers by Department',
-                color: AppColors.success),
-            const SizedBox(height: 16),
-            depts.isEmpty
-                ? _EmptyChart(message: 'No department data')
-                : Row(
-                    children: [
-                      SizedBox(
-                        height: 160,
-                        width: 160,
-                        child: PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 40,
-                            sections: depts.asMap().entries.map((e) {
-                              final color =
-                                  _colors[e.key % _colors.length];
-                              final count =
-                                  e.value['count'] as int? ?? 0;
-                              return PieChartSectionData(
-                                color: color,
-                                value: count.toDouble(),
-                                title: '$count',
-                                radius: 50,
-                                titleStyle: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: depts.asMap().entries.map((e) {
-                            final color = _colors[e.key % _colors.length];
-                            final dept = e.value['department'] as String? ??
-                                'Unknown';
-                            final count = e.value['count'] as int? ?? 0;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                        color: color,
-                                        shape: BoxShape.circle),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      dept,
-                                      style: styles.AppTextStyles.bodySmall
-                                          .copyWith(
-                                              color:
-                                                  AppColors.textPrimary),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$count',
-                                    style: styles.AppTextStyles.bodySmall
-                                        .copyWith(
-                                            color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
+    return _DashCard(
+      title: 'Total_Violations by Site',
+      child: Obx(() {
+        final data = controller.violationsByDept;
+        if (data.isEmpty) {
+          return const _EmptyChart(message: 'No site data');
+        }
+        return SizedBox(
+          height: 200,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.center,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    return BarTooltipItem(
+                      '${data[group.x].department}\n${rod.toY.toInt()}',
+                      const TextStyle(color: Colors.white, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  axisNameWidget: const RotatedBox(
+                    quarterTurns: 3,
+                    child: Text('Site',
+                        style: TextStyle(
+                            color: _textSecondary, fontSize: 9)),
                   ),
-          ],
-        ),
-      );
-    });
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 72,
+                    getTitlesWidget: (v, _) {
+                      final i = v.toInt();
+                      if (i < 0 || i >= data.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Text(
+                          data[i].department,
+                          style: const TextStyle(
+                              color: _textSecondary, fontSize: 9),
+                          textAlign: TextAlign.right,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  axisNameWidget: const Text('Total_Violations',
+                      style:
+                          TextStyle(color: _textSecondary, fontSize: 9)),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (v, _) => Text(
+                      v.toInt().toString(),
+                      style: const TextStyle(
+                          color: _textSecondary, fontSize: 9),
+                    ),
+                  ),
+                ),
+                rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                drawHorizontalLine: false,
+                getDrawingVerticalLine: (_) =>
+                    FlLine(color: const Color(0xFF2D3748), strokeWidth: 0.5),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(
+                    color: const Color(0xFF2D3748), width: 0.5),
+              ),
+              barGroups: data.asMap().entries.map((e) {
+                final color = _barColors[e.key % _barColors.length];
+                return BarChartGroupData(
+                  x: e.key,
+                  barsSpace: 4,
+                  barRods: [
+                    BarChartRodData(
+                      toY: e.value.count.toDouble(),
+                      color: color,
+                      width: 14,
+                      borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(3)),
+                    ),
+                  ],
+                );
+              }).toList(),
+              groupsSpace: 10,
+            ),
+            duration: Duration.zero,
+          ),
+        );
+      }),
+    );
   }
 }
 
-// ── Worker Violations List ────────────────────────────────────────────────────
+// ── Pie Chart ─────────────────────────────────────────────────────────────────
 
-class _WorkerViolationsList extends StatelessWidget {
-  const _WorkerViolationsList({required this.controller});
+class _PieCard extends StatelessWidget {
+  const _PieCard({required this.controller});
+  final ReportsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashCard(
+      title: 'Count of Worker_ID by Violation',
+      child: Obx(() {
+        final violated = controller.violatedWorkers.value;
+        final compliant = controller.compliantWorkers.value;
+        final total = violated + compliant;
+        if (total == 0) {
+          return const _EmptyChart(message: 'No worker data');
+        }
+        final yesPercent = (violated / total * 100);
+        final noPercent = (compliant / total * 100);
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 160,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 0,
+                  startDegreeOffset: -90,
+                  sections: [
+                    PieChartSectionData(
+                      color: _borderRed,
+                      value: violated.toDouble(),
+                      title:
+                          '$violated (${yesPercent.toStringAsFixed(1)}%)',
+                      radius: 70,
+                      titleStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600),
+                      titlePositionPercentageOffset: 0.65,
+                    ),
+                    PieChartSectionData(
+                      color: _borderGreen,
+                      value: compliant.toDouble(),
+                      title:
+                          '$compliant (${noPercent.toStringAsFixed(1)}%)',
+                      radius: 70,
+                      titleStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600),
+                      titlePositionPercentageOffset: 0.65,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _Legend(color: _borderRed, label: 'Yes'),
+                const SizedBox(width: 16),
+                _Legend(color: _borderGreen, label: 'No'),
+              ],
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 5),
+        Text(label,
+            style:
+                const TextStyle(color: _textSecondary, fontSize: 11)),
+      ],
+    );
+  }
+}
+
+// ── Worker List ───────────────────────────────────────────────────────────────
+
+class _WorkerList extends StatelessWidget {
+  const _WorkerList({required this.controller});
   final ReportsController controller;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final workers = controller.workerStats;
-
+      if (workers.isEmpty) return const SizedBox.shrink();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.people, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Worker Violations',
-                  style: styles.AppTextStyles.headlineSmall.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (workers.isEmpty)
-            AppCard(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.people_outline,
-                        color: AppColors.textSecondary, size: 40),
-                    const SizedBox(height: 12),
-                    Text('No worker data available',
-                        style: styles.AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
-            )
-          else
-            ...workers.map((w) => _WorkerCard(worker: w)),
+          const Text('Workers',
+              style: TextStyle(
+                  color: _textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          ...workers.map((w) => _WorkerRow(worker: w)),
         ],
       );
     });
   }
 }
 
-class _WorkerCard extends StatelessWidget {
-  const _WorkerCard({required this.worker});
+class _WorkerRow extends StatelessWidget {
+  const _WorkerRow({required this.worker});
   final WorkerViolationStats worker;
-
-  Color get _complianceColor {
-    final r = worker.complianceRate;
-    if (r >= 95) return AppColors.success;
-    if (r >= 85) return AppColors.primary;
-    if (r >= 70) return AppColors.warning;
-    return AppColors.error;
-  }
 
   @override
   Widget build(BuildContext context) {
+    final hasViolation = worker.violationCount > 0;
     return GestureDetector(
       onTap: () => Get.toNamed(
           AppRoutes.WORKER_DETAILS.replaceAll(':id', worker.workerId)),
-      child: AppCard(
-        padding: EdgeInsets.zero,
-        margin: const EdgeInsets.only(bottom: 10),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.person,
-                    color: AppColors.primary, size: 26),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFF2D3748), width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _borderBlue.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(worker.name,
-                        style: styles.AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.shield,
-                            color: _complianceColor, size: 13),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${worker.complianceRate.toStringAsFixed(0)}% compliance',
-                          style: styles.AppTextStyles.bodySmall
-                              .copyWith(color: _complianceColor),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              child: const Icon(Icons.person, color: _borderBlue, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(worker.name,
+                      style: const TextStyle(
+                          color: _textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                  Text(worker.workerId,
+                      style: const TextStyle(
+                          color: _textSecondary, fontSize: 11)),
+                ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: worker.violationCount > 0
-                      ? AppColors.error.withValues(alpha: 0.15)
-                      : AppColors.success.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: worker.violationCount > 0
-                        ? AppColors.error.withValues(alpha: 0.5)
-                        : AppColors.success.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text('${worker.violationCount}',
-                        style: styles.AppTextStyles.bodyLarge.copyWith(
-                            color: worker.violationCount > 0
-                                ? AppColors.error
-                                : AppColors.success,
-                            fontWeight: FontWeight.w700)),
-                    Text('violations',
-                        style: styles.AppTextStyles.bodySmall.copyWith(
-                            color: worker.violationCount > 0
-                                ? AppColors.error
-                                : AppColors.success,
-                            fontSize: 9)),
-                  ],
-                ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (hasViolation ? _borderRed : _borderGreen)
+                    .withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                    color: (hasViolation ? _borderRed : _borderGreen)
+                        .withValues(alpha: 0.5)),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right,
-                  color: AppColors.textSecondary, size: 20),
-            ],
-          ),
+              child: Text(
+                hasViolation ? '${worker.violationCount} violations' : 'Safe',
+                style: TextStyle(
+                    color: hasViolation ? _borderRed : _borderGreen,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: _textSecondary, size: 18),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
+// ── Shared card shell ─────────────────────────────────────────────────────────
 
-class _ChartTitle extends StatelessWidget {
-  const _ChartTitle(
-      {required this.icon, required this.title, required this.color});
-  final IconData icon;
+class _DashCard extends StatelessWidget {
+  const _DashCard({required this.title, required this.child});
   final String title;
-  final Color color;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 10),
-        Text(title,
-            style: styles.AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFF2D3748), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  color: _textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -769,17 +806,11 @@ class _EmptyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.bar_chart_outlined,
-              color: AppColors.textSecondary, size: 40),
-          const SizedBox(height: 8),
-          Text(message,
-              style: styles.AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textSecondary)),
-        ],
+    return SizedBox(
+      height: 120,
+      child: Center(
+        child: Text(message,
+            style: const TextStyle(color: _textSecondary, fontSize: 12)),
       ),
     );
   }
