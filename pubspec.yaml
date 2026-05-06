@@ -47,6 +47,8 @@ dependencies:
   camera: ^0.10.5+7
   image_picker: ^1.0.7
   image: ^4.0.0
+  video_thumbnail: ^0.5.3
+  video_player: ^2.9.1
 
   # Local Storage
   shared_preferences: ^2.2.2
@@ -55,6 +57,8 @@ dependencies:
 
   # UI Components
   flutter_svg: ^2.0.9
+  webview_flutter: ^4.10.0
+  fl_chart: ^0.69.0
 
   # Utilities
   meta: ^1.15.0
