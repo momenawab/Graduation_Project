@@ -1,9 +1,9 @@
+import '../../../core/constants/api_constants.dart';
 import 'api_client.dart';
 
-/// Instructions API stub with methods for tutorials and FAQ content.
-///
-/// This is a stub implementation that returns mock data.
-/// In production, this would make actual HTTP requests to the backend API.
+/// Instructions API. Tutorials are sourced from the backend
+/// `/api/content/how-to/` endpoint (with a local fallback); categories and FAQ
+/// remain client-side content.
 class InstructionsApi {
   /// The API client instance
   final ApiClient apiClient;
@@ -28,14 +28,32 @@ class InstructionsApi {
     ];
   }
 
-  /// Gets a list of tutorials.
+  /// Gets a list of tutorials from the backend how-to steps.
+  /// GET /api/content/how-to/ — falls back to local content on error/empty.
   Future<List<Map<String, dynamic>>> getTutorials() async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.get<List<dynamic>>('/instructions/tutorials');
-    // return response.data.cast<Map<String, dynamic>>();
+    try {
+      final response = await apiClient.get<List<dynamic>>(
+        ApiConstants.howTo.fullPath,
+      );
+      final steps = response.data ?? const [];
+      if (steps.isNotEmpty) {
+        return steps.map<Map<String, dynamic>>((e) {
+          final m = e as Map<String, dynamic>;
+          return {
+            'id': m['id'].toString(),
+            'title': m['title'] ?? '',
+            'description': m['description'] ?? '',
+            'category': 'getting-started',
+            'icon': 'scan',
+            'readTime': '',
+            'image': m['image_url'],
+          };
+        }).toList();
+      }
+    } catch (_) {
+      // Fall through to local content below.
+    }
 
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 400));
     return [
       {
         'id': '1',

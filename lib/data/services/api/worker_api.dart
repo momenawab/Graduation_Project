@@ -76,26 +76,32 @@ class WorkerApi {
   }
 
   /// Updates an existing worker.
+  /// PUT /api/workers/{id}/
   Future<Worker> updateWorker(Worker worker) async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.put<Map<String, dynamic>>(
-    //   '/workers/${worker.id}',
-    //   data: worker.toJson(),
-    // );
-    // return Worker.fromJson(response.data);
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
-    return worker;
+    try {
+      final response = await dio.put(
+        '${ApiConstants.apiPath}/workers/${worker.id}/',
+        data: {
+          'name': worker.fullName,
+          'department': worker.department,
+          'position': worker.jobTitle,
+          'required_ppe': worker.requiredPpe.map((e) => e.name).toList(),
+        },
+      );
+      return Worker.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
   /// Deletes a worker by ID.
+  /// DELETE /api/workers/{id}/
   Future<void> deleteWorker(String id) async {
-    // TODO: Replace with actual API call
-    // await apiClient.delete<void>('/workers/$id');
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      await dio.delete('${ApiConstants.apiPath}/workers/$id/');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
 
   /// Gets a list of all departments.

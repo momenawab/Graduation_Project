@@ -1,10 +1,13 @@
+import '../../../core/constants/api_constants.dart';
 import '../../models/alert_config.dart';
 import 'api_client.dart';
 
-/// Alert API stub with methods for alert configuration and management.
+/// Alert API — wired to the SafeSight Django alerts endpoints.
 ///
-/// This is a stub implementation that returns mock data.
-/// In production, this would make actual HTTP requests to the backend API.
+/// Note on read-state: marking notifications read/unread is handled in real
+/// time over the `/ws/notifications/` WebSocket (`mark_read` message), so the
+/// REST-side mark-read methods here are best-effort no-ops kept for API
+/// compatibility with existing controllers.
 class AlertApi {
   /// The API client instance
   final ApiClient apiClient;
@@ -12,80 +15,78 @@ class AlertApi {
   /// Creates a new AlertApi instance.
   AlertApi({required this.apiClient});
 
-  /// Gets all alert configurations.
-  Future<List<AlertConfig>> getConfig() async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.get<List<dynamic>>('/alerts/config');
-    // return response.data.map((json) => AlertConfig.fromJson(json)).toList();
+  /// Per-alert delivery preferences are persisted inside the user's
+  /// notification-preferences blob under this key.
+  static const String _configKey = 'flutterAlertConfigs';
 
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 400));
-    return [];
+  /// Gets all alert delivery configurations for the current user.
+  Future<List<AlertConfig>> getConfig() async {
+    final response = await apiClient.get<Map<String, dynamic>>(
+      ApiConstants.notificationPreferences.fullPath,
+    );
+    final list = (response.data?[_configKey] as List?) ?? const [];
+    return list
+        .map((e) => AlertConfig.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  /// Updates an alert configuration.
+  /// Updates a single alert configuration and persists the full set.
   Future<AlertConfig> updateConfig(AlertConfig config) async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.put<Map<String, dynamic>>(
-    //   '/alerts/config/${config.alertType.name}',
-    //   data: config.toJson(),
-    // );
-    // return AlertConfig.fromJson(response.data);
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
+    final current = await getConfig();
+    final next = [
+      for (final c in current)
+        if (c.alertType != config.alertType) c,
+      config,
+    ];
+    await apiClient.put<Map<String, dynamic>>(
+      ApiConstants.notificationPreferences.fullPath,
+      data: {_configKey: next.map((c) => c.toJson()).toList()},
+    );
     return config;
   }
 
   /// Gets alert history.
+  /// GET /api/alerts/history/
   Future<List<Map<String, dynamic>>> getHistory() async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.get<List<dynamic>>('/alerts/history');
-    // return response.data.cast<Map<String, dynamic>>();
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
-    return [];
+    final response = await apiClient.get<Map<String, dynamic>>(
+      ApiConstants.alertHistory.fullPath,
+    );
+    final data = response.data ?? {};
+    final results = (data['results'] ?? data['history'] ?? []) as List;
+    return results.cast<Map<String, dynamic>>();
   }
 
-  /// Marks an alert as read.
+  /// Alert delivery stats (KPI tiles).
+  /// GET /api/alerts/stats/
+  Future<Map<String, dynamic>> getStats() async {
+    final response = await apiClient.get<Map<String, dynamic>>(
+      ApiConstants.alertStats.fullPath,
+    );
+    return response.data ?? <String, dynamic>{};
+  }
+
+  /// Marks an alert as read — handled via the notifications WebSocket.
   Future<void> markAsRead(String alertId) async {
-    // TODO: Replace with actual API call
-    // await apiClient.put<void>('/alerts/$alertId/read');
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Read-state is driven by NotificationStream over the WebSocket.
   }
 
-  /// Marks all alerts as read.
+  /// Marks all alerts as read — handled via the notifications WebSocket.
   Future<void> markAllAsRead() async {
-    // TODO: Replace with actual API call
-    // await apiClient.put<void>('/alerts/read-all');
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Read-state is driven by NotificationStream over the WebSocket.
   }
 
-  /// Deletes an alert.
+  /// Deletes an alert. The backend exposes no per-history delete endpoint.
   Future<void> deleteAlert(String alertId) async {
-    // TODO: Replace with actual API call
-    // await apiClient.delete<void>('/alerts/$alertId');
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 200));
+    // No-op: alert history is immutable on the backend.
   }
 
-  /// Tests an alert configuration.
+  /// Sends a test alert.
+  /// POST /api/alerts/test/
   Future<Map<String, dynamic>> testAlert(AlertConfig config) async {
-    // TODO: Replace with actual API call
-    // final response = await apiClient.post<Map<String, dynamic>>(
-    //   '/alerts/test',
-    //   data: config.toJson(),
-    // );
-    // return response.data;
-
-    // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
-    return {'success': true, 'message': 'Alert test successful'};
+    final response = await apiClient.post<Map<String, dynamic>>(
+      ApiConstants.alertTest.fullPath,
+      data: {'alert_type': config.alertType.name},
+    );
+    return response.data ?? {'success': true};
   }
 }

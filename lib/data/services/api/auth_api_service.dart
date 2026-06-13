@@ -103,7 +103,7 @@ class AuthApiService {
   }) async {
     try {
       await _apiClient.dio.post(
-        '${ApiConstants.profile.fullPath}change-password/',
+        ApiConstants.changePassword.fullPath,
         data: {
           'old_password': oldPassword,
           'new_password': newPassword,

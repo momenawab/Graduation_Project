@@ -1,17 +1,24 @@
 /// API configuration constants for SafeSight backend integration.
 class ApiConstants {
-  /// Base URL for the Django backend API
-  /// For local development, use localhost or your emulator's IP
-  /// For Android emulator: use '10.0.2.2' instead of 'localhost'
-  /// For iOS simulator: use 'localhost' or '127.0.0.1'
+  /// Base URL for the Django backend API.
+  ///
+  /// Override per build with --dart-define, e.g. for the AWS deployment:
+  ///   flutter run --dart-define=API_BASE_URL=https://your-aws-host
+  ///   flutter build apk --dart-define=API_BASE_URL=https://your-aws-host
+  ///
+  /// Local development defaults:
+  ///   Android emulator: http://10.0.2.2:8000
+  ///   iOS simulator:    http://127.0.0.1:8000
+  /// wsUrl is derived automatically (https -> wss).
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-  //  defaultValue: 'http://138.199.148.126',
-  defaultValue: 'http://172.20.10.9:8000',
+    defaultValue: 'http://16.171.170.25:80/',
   );
 
-  /// WebSocket URL for real-time detection
-  static String get wsUrl => baseUrl.replaceFirst('http', 'ws');
+  /// WebSocket URL for real-time detection.
+  /// Strips any trailing slash so `${wsUrl}${wsDetection}` doesn't double up.
+  static String get wsUrl =>
+      baseUrl.replaceFirst('http', 'ws').replaceFirst(RegExp(r'/+$'), '');
 
   /// API Endpoints
   static const String apiPath = '/api';
@@ -21,7 +28,21 @@ class ApiConstants {
   static const String register = '/auth/register/';
   static const String logout = '/auth/logout/';
   static const String profile = '/auth/profile/';
+  static const String changePassword = '/auth/change-password/';
+  static const String settings = '/auth/settings/';
+  static const String notificationPreferences = '/auth/notification-preferences/';
   static const String createWorkerAccount = '/auth/workers/create-account/';
+
+  // Cameras
+  static const String cameras = '/cameras/';
+
+  // Content
+  static const String howTo = '/content/how-to/';
+
+  // Alerts (extra)
+  static const String alertStats = '/alerts/stats/';
+  static const String alertRecipients = '/alerts/recipients/';
+  static const String alertConfigCreate = '/alerts/config/create/';
 
   // Detection endpoints
   static const String detectionUpload = '/detection/upload/';
