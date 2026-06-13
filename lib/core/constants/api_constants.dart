@@ -7,7 +7,7 @@ class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
   //  defaultValue: 'http://138.199.148.126',
-  defaultValue: 'http://127.0.0.1:8000',
+  defaultValue: 'http://172.20.10.9:8000',
   );
 
   /// WebSocket URL for real-time detection

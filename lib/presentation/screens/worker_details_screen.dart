@@ -124,6 +124,7 @@ class WorkerDetailsScreen extends StatelessWidget {
     final workerId = worker['worker_id'] as String? ?? '';
     final department = worker['department'] as String? ?? '';
     final position = worker['position'] as String? ?? '';
+    final photoUrl = worker['photo_url'] as String?;
 
     return AppCard(
       padding: const EdgeInsets.all(20),
@@ -137,11 +138,24 @@ class WorkerDetailsScreen extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(40),
             ),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.primary,
-              size: 40,
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: photoUrl != null && photoUrl.isNotEmpty
+                ? Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    width: 80,
+                    height: 80,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.person,
+                      color: AppColors.primary,
+                      size: 40,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person,
+                    color: AppColors.primary,
+                    size: 40,
+                  ),
           ),
 
           const SizedBox(height: 16),

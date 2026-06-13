@@ -14,7 +14,9 @@ class WorkerMonitorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(WorkerMonitorController());
+    final controller = Get.isRegistered<WorkerMonitorController>()
+        ? Get.find<WorkerMonitorController>()
+        : Get.put(WorkerMonitorController());
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -24,11 +26,17 @@ class WorkerMonitorScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Obx(() {
-          if (!controller.hasImage.value) {
+          // Touch all state-machine observables so Obx always tracks them,
+          // even when the chosen branch delegates to nested Obx widgets.
+          final hasImage = controller.hasImage.value;
+          final isAnalyzing = controller.isAnalyzing.value;
+          final result = controller.detectionResult.value;
+
+          if (!hasImage) {
             return _buildEmptyState(controller);
-          } else if (controller.isAnalyzing.value) {
+          } else if (isAnalyzing) {
             return _buildAnalyzingState(controller);
-          } else if (controller.detectionResult.value != null) {
+          } else if (result != null) {
             return _buildResultState(controller);
           } else {
             return _buildPreviewState(controller);

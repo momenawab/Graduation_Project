@@ -23,6 +23,9 @@ class Worker extends Equatable {
   /// Face recognition template ID (optional, future use)
   final String? faceId;
 
+  /// Absolute URL to the worker's photo (from backend)
+  final String? photoUrl;
+
   /// Registration timestamp
   final DateTime createdAt;
 
@@ -36,6 +39,7 @@ class Worker extends Equatable {
     required this.jobTitle,
     required this.requiredPpe,
     this.faceId,
+    this.photoUrl,
     required this.createdAt,
     this.violationCount = 0,
   });
@@ -49,6 +53,7 @@ class Worker extends Equatable {
       jobTitle: json['position'] as String? ?? json['jobTitle'] as String? ?? '',
       requiredPpe: _parseRequiredPpe(json['required_ppe'] ?? json['requiredPpe']),
       faceId: json['faceId'] as String?,
+      photoUrl: json['photo_url'] as String? ?? json['photoUrl'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : json['createdAt'] != null
@@ -117,6 +122,7 @@ class Worker extends Equatable {
     String? jobTitle,
     List<PPEType>? requiredPpe,
     String? faceId,
+    String? photoUrl,
     DateTime? createdAt,
     int? violationCount,
   }) {
@@ -127,6 +133,7 @@ class Worker extends Equatable {
       jobTitle: jobTitle ?? this.jobTitle,
       requiredPpe: requiredPpe ?? this.requiredPpe,
       faceId: faceId ?? this.faceId,
+      photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       violationCount: violationCount ?? this.violationCount,
     );
@@ -140,6 +147,7 @@ class Worker extends Equatable {
     jobTitle,
     requiredPpe,
     faceId,
+    photoUrl,
     createdAt,
     violationCount,
   ];

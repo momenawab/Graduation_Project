@@ -61,20 +61,19 @@ class MonitoringScreen extends GetView<MonitoringController> {
   }
 
   /// Builds the camera preview widget.
+  /// Camera readiness is already gated by the outer Obx via
+  /// `isCameraInitialized`, so a plain null-check is enough here.
   Widget _buildCameraPreview() {
-    return Positioned.fill(
-      child: Obx(() {
-        if (controller.cameraController == null ||
-            !controller.cameraController!.value.isInitialized) {
-          return Container(
-            color: AppColors.background,
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        return CameraPreview(controller.cameraController!);
-      }),
-    );
+    final cam = controller.cameraController;
+    if (cam == null || !cam.value.isInitialized) {
+      return Positioned.fill(
+        child: Container(
+          color: AppColors.background,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    return Positioned.fill(child: CameraPreview(cam));
   }
 
   /// Builds the top status bar with detection counts.

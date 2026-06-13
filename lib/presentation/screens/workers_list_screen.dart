@@ -278,11 +278,15 @@ class WorkerCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: worker.faceId != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: const Icon(
-                          Icons.person,
+                clipBehavior: Clip.antiAlias,
+                child: worker.photoUrl != null && worker.photoUrl!.isNotEmpty
+                    ? Image.network(
+                        worker.photoUrl!,
+                        fit: BoxFit.cover,
+                        width: 56,
+                        height: 56,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.person_outline,
                           color: AppColors.primary,
                           size: 32,
                         ),
