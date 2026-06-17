@@ -1,4 +1,4 @@
-package com.example.grad_project
+package com.grad.modern
 
 import io.flutter.embedding.android.FlutterActivity
 

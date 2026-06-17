@@ -164,6 +164,19 @@ class WorkerApi {
     }
   }
 
+  /// F4 — per-worker compliance score + streak.
+  /// GET /api/workers/{worker_id}/compliance/
+  Future<Map<String, dynamic>> getWorkerCompliance(String workerId) async {
+    try {
+      final response = await dio.get(
+        '${ApiConstants.apiPath}/workers/$workerId/compliance/',
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   /// Gets overall worker statistics for reports.
   Future<Map<String, dynamic>> getWorkerStats() async {
     try {

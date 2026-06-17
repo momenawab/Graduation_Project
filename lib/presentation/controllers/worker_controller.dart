@@ -59,14 +59,14 @@ class WorkerController extends GetxController {
     'Safety': ['Inspector', 'Officer', 'Manager'],
   };
 
-  // PPE options with display names
+  // PPE options the detection model can actually detect (C1). safetyGlasses
+  // and earProtection are intentionally excluded so workers aren't assigned PPE
+  // that would always read as "missing".
   static const Map<PPEType, String> ppeDisplayNames = {
     PPEType.hardHat: 'Hard Hat',
-    PPEType.safetyGlasses: 'Safety Glasses',
     PPEType.vest: 'Vest',
     PPEType.gloves: 'Gloves',
     PPEType.steelToedBoots: 'Steel-toed Boots',
-    PPEType.earProtection: 'Ear Protection',
   };
 
   // Mock existing worker IDs for duplicate check

@@ -274,6 +274,29 @@ class WorkerViolationsScreen extends StatelessWidget {
               }).toList(),
             ),
           ],
+
+          // F4 — acknowledge action.
+          const SizedBox(height: 12),
+          if (violation['acknowledged_at'] != null)
+            Row(
+              children: [
+                const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                const SizedBox(width: 6),
+                Text('Acknowledged',
+                    style: styles.AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.success)),
+              ],
+            )
+          else
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.done, size: 16),
+                label: const Text('Acknowledge'),
+                onPressed: () => Get.find<WorkerViolationsController>()
+                    .acknowledge(violation['violation_id']?.toString() ?? ''),
+              ),
+            ),
         ],
       ),
     );

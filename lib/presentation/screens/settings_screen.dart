@@ -205,9 +205,11 @@ class SettingsScreen extends GetView<SettingsController> {
           _buildSettingsItem(
             icon: Icons.language,
             title: 'App Language',
-            value: 'English (US)',
+            value: controller.language.value == 'ar' ? 'العربية' : 'English',
             onTap: () {
-              // TODO: Implement language selection
+              // F12 — toggle English <-> Arabic (Arabic switches UI to RTL).
+              controller.setLanguage(
+                  controller.language.value == 'ar' ? 'en' : 'ar');
             },
           ),
           _buildDivider(),

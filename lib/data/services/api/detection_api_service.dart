@@ -212,6 +212,18 @@ class DetectionApiService {
     }
   }
 
+  /// F4 — acknowledge a violation notification.
+  /// POST /api/detection/violations/{id}/acknowledge/
+  Future<void> acknowledgeViolation(String violationId) async {
+    try {
+      await _apiClient.dio.post(
+        '${ApiConstants.detectionViolations.fullPath}$violationId/acknowledge/',
+      );
+    } on dio.DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   /// Parse detection response from backend.
   DetectionResult _parseDetectionResponse(dynamic data) {
     final detectionsList = data['detections'] as List? ?? [];

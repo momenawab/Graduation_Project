@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/text_styles.dart' as styles;
 import '../../data/models/detection_result.dart';
 import '../../data/models/notification.dart' as models;
+import '../../routes/app_routes.dart';
 
 /// Worker Home Screen - Dashboard for workers to view their compliance status.
 @immutable
@@ -24,6 +25,12 @@ class WorkerHomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Get.toNamed(AppRoutes.REPORT_INCIDENT),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.report_problem),
+        label: const Text('Report Incident'),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -300,6 +307,23 @@ class WorkerHomeScreen extends StatelessWidget {
                   'Total Violations',
                   '${controller.totalViolationCount.value}',
                   AppColors.warning,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // F4 — personal compliance score + safe-day streak.
+            Row(
+              children: [
+                _statChip(
+                  'Compliance Score',
+                  '${controller.complianceScore.value}%',
+                  AppColors.success,
+                ),
+                const SizedBox(width: 8),
+                _statChip(
+                  'Days Since Violation',
+                  '${controller.streakDays.value}',
+                  AppColors.accent,
                 ),
               ],
             ),

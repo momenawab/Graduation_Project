@@ -39,6 +39,9 @@ class ApiConstants {
   // Content
   static const String howTo = '/content/how-to/';
 
+  // Incidents (F15)
+  static const String incidents = '/incidents/';
+
   // Alerts (extra)
   static const String alertStats = '/alerts/stats/';
   static const String alertRecipients = '/alerts/recipients/';

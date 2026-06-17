@@ -80,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                     children: [
                       // Login title
                       Text(
-                        'Sign In',
+                        'sign_in'.tr,
                         style: styles.AppTextStyles.headlineMedium.copyWith(
                           color: AppColors.textPrimary,
                         ),
@@ -90,7 +90,7 @@ class LoginScreen extends StatelessWidget {
 
                       // Subtitle
                       Text(
-                        'Enter your credentials to continue',
+                        'enter_credentials'.tr,
                         style: styles.AppTextStyles.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
@@ -100,7 +100,7 @@ class LoginScreen extends StatelessWidget {
                       TextField(
                         onChanged: (value) => controller.username.value = value,
                         decoration: InputDecoration(
-                          labelText: 'Username',
+                          labelText: 'username'.tr,
                           prefixIcon: const Icon(Icons.person_outline),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -123,7 +123,7 @@ class LoginScreen extends StatelessWidget {
                         onChanged: (value) => controller.password.value = value,
                         obscureText: !controller.isPasswordVisible.value,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: 'password'.tr,
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -207,8 +207,8 @@ class LoginScreen extends StatelessWidget {
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text(
-                              'Sign In',
+                          : Text(
+                              'sign_in'.tr,
                               style: styles.AppTextStyles.button,
                             ),
                       )),

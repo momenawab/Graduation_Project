@@ -20,6 +20,7 @@ import '../presentation/screens/worker_monitor_screen.dart';
 import '../presentation/screens/workers_list_screen.dart';
 import '../presentation/screens/worker_details_screen.dart';
 import '../presentation/screens/power_bi_report_screen.dart';
+import '../presentation/screens/report_incident_screen.dart';
 
 class AppRouteGenerator {
   static GetPage unknownRoute() =>
@@ -76,6 +77,8 @@ class AppRouteGenerator {
     GetPage(name: AppRoutes.WORKER_HOME, page: () => const WorkerHomeScreen()),
     GetPage(name: AppRoutes.WORKER_NOTIFICATIONS, page: () => const WorkerNotificationsScreen()),
     GetPage(name: AppRoutes.WORKER_VIOLATIONS, page: () => const WorkerViolationsScreen()),
+    // Report Incident (F15)
+    GetPage(name: AppRoutes.REPORT_INCIDENT, page: () => const ReportIncidentScreen()),
   ];
 }
 

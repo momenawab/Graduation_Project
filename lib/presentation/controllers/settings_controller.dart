@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/models/user_settings.dart' as models;
+import '../../data/services/storage_service.dart';
+import '../../data/services/api/api_client.dart';
+import '../../data/services/api/auth_api_service.dart';
 import '../../routes/app_routes.dart';
 
 /// Controller for managing app settings and user profile
@@ -31,12 +34,27 @@ class SettingsController extends GetxController {
   /// Loading state for operations
   final RxBool isLoading = false.obs;
 
+  /// Current language code ('en' | 'ar').
+  final RxString language = 'en'.obs;
+
   @override
   void onInit() {
     super.onInit();
     // Initialize toggles from user settings
     hazardAlerts.value = userSettings.value.hazardAlerts;
     safeZoneMonitoring.value = userSettings.value.safeZoneMonitoring;
+    if (Get.isRegistered<StorageService>()) {
+      language.value = Get.find<StorageService>().userLanguage;
+    }
+  }
+
+  /// F12 — switch language at runtime (Arabic flips the UI to RTL) and persist.
+  Future<void> setLanguage(String code) async {
+    language.value = code;
+    Get.updateLocale(Locale(code));
+    if (Get.isRegistered<StorageService>()) {
+      await Get.find<StorageService>().setUserLanguage(code);
+    }
   }
 
   /// Updates user profile information
@@ -108,19 +126,30 @@ class SettingsController extends GetxController {
     // TODO: Sync with server if online
   }
 
-  /// Logs out the user and navigates to splash/login
+  /// Logs out the user and navigates to login.
   Future<void> logout() async {
     try {
       isLoading.value = true;
 
-      // TODO: Clear stored credentials
-      // await _authService.logout();
+      // Best-effort server logout (ignore network errors).
+      if (Get.isRegistered<AuthApiService>()) {
+        try {
+          await Get.find<AuthApiService>().logout();
+        } catch (_) {/* offline / token already invalid */}
+      }
 
-      // TODO: Clear local storage
-      // await _storage.clear();
+      // Clear the auth token from the API client.
+      if (Get.isRegistered<ApiClient>()) {
+        Get.find<ApiClient>().clearAuthToken();
+      }
 
-      // Navigate to splash screen
-      Get.offAllNamed(AppRoutes.SPLASH);
+      // Clear persisted credentials so the splash screen routes to login.
+      if (Get.isRegistered<StorageService>()) {
+        await Get.find<StorageService>().clearUserData();
+      }
+
+      // Go straight to login (not splash, which would re-evaluate).
+      Get.offAllNamed(AppRoutes.LOGIN);
 
       Get.snackbar(
         'Logged Out',

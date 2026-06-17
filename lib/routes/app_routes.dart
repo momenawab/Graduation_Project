@@ -11,6 +11,9 @@ abstract class AppRoutes {
   static const String WORKER_MONITOR = '/worker-monitor';
   static const String SETTINGS = '/settings';
 
+  // Incident reporting (F15)
+  static const String REPORT_INCIDENT = '/incidents/report';
+
   // Coming Soon placeholder
   static const String COMING_SOON = '/coming-soon';
 

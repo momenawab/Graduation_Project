@@ -33,6 +33,10 @@ class WorkerHomeController extends GetxController {
   /// Total violation count
   final RxInt totalViolationCount = 0.obs;
 
+  /// F4 — personal compliance score (0-100) and days since last violation.
+  final RxInt complianceScore = 100.obs;
+  final RxInt streakDays = 0.obs;
+
   /// Notifications list
   final RxList<models.Notification> notifications = <models.Notification>[].obs;
 
@@ -68,8 +72,13 @@ class WorkerHomeController extends GetxController {
 
       final workerId = _storageService.workerId;
       if (workerId == null) {
-        // Not logged in as worker, redirect to login
-        Get.offAllNamed(AppRoutes.LOGIN);
+        // Not logged in as worker — redirect AFTER the current frame so we
+        // don't push a route while the WorkerHome transition is still locked
+        // (avoids the '!navigator._debugLocked' assertion).
+        isLoading.value = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.offAllNamed(AppRoutes.LOGIN);
+        });
         return;
       }
 
@@ -79,6 +88,13 @@ class WorkerHomeController extends GetxController {
 
       // Load violations
       await _loadViolations();
+
+      // F4 — load compliance score + streak
+      try {
+        final c = await _workerApi.getWorkerCompliance(workerId);
+        complianceScore.value = (c['score'] as num?)?.toInt() ?? 100;
+        streakDays.value = (c['streak_days'] as num?)?.toInt() ?? 0;
+      } catch (_) {/* non-fatal */}
 
     } catch (e) {
       errorMessage.value = e.toString();

@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:safesight/data/services/api/api_client.dart';
 import 'package:safesight/data/services/api/auth_api_service.dart';
 import 'package:safesight/data/services/storage_service.dart';
+import 'package:safesight/data/services/push_service.dart';
 import 'package:safesight/routes/app_routes.dart';
 
 /// Controller for unified login screen.
@@ -76,6 +77,11 @@ class LoginController extends GetxController {
       if (workerData != null) {
         await _storageService.setWorkerId(workerData['worker_id'] as String? ?? '');
         await _storageService.setWorkerName(workerData['name'] as String? ?? '');
+      }
+
+      // F5 — register this device for push (no-op for non-worker / unconfigured).
+      if (Get.isRegistered<PushService>()) {
+        Get.find<PushService>().syncToken();
       }
 
       // Route based on role
