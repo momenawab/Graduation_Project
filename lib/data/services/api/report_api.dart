@@ -2,7 +2,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../models/report_data.dart';
 import 'api_client.dart';
 
-/// Report API — wired to the SafeSight Django reports endpoints.
+/// Report API — wired to the SafeEye Django reports endpoints.
 class ReportApi {
   /// The API client instance
   final ApiClient apiClient;

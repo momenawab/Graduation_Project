@@ -1,20 +1,25 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../controllers/reports_controller.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/bottom_nav_bar.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/theme/text_styles.dart' as styles;
 import '../../routes/app_routes.dart';
 
-// ── Colour palette matching the Power BI dark theme ──────────────────────────
-const _bgColor = Color(0xFF0E1117);
-const _cardColor = Color(0xFF1A1F2E);
-const _borderBlue = Color(0xFF3B82F6);
-const _borderYellow = Color(0xFFF59E0B);
+// ── Palette unified with the SafeEye brand (semantic accents preserved) ─────
+const _bgColor = AppColors.background;
+const _cardColor = AppColors.cardBackground;
+const _borderBlue = AppColors.accent;
+const _borderYellow = AppColors.warning;
 const _borderGreen = Color(0xFF10B981);
-const _borderRed = Color(0xFFEF4444);
-const _textPrimary = Color(0xFFE2E8F0);
-const _textSecondary = Color(0xFF8892A4);
+const _borderRed = AppColors.error;
+const _textPrimary = AppColors.textPrimary;
+const _textSecondary = AppColors.textSecondary;
 const _chartBlue = Color(0xFF60A5FA);
+const _gridLine = Color(0xFF26344F);
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -25,54 +30,68 @@ class ReportsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: _bgColor,
+      extendBody: true,
       drawer: _FilterDrawer(controller: c),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(controller: c),
-            Expanded(
-              child: Obx(() {
-                if (c.isLoading.value) {
-                  return const Center(
-                      child: CircularProgressIndicator(color: _borderBlue));
-                }
-                return RefreshIndicator(
-                  onRefresh: c.loadAll,
-                  color: _borderBlue,
-                  backgroundColor: _cardColor,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _KpiRow(controller: c),
-                        const SizedBox(height: 12),
-                        _TimelineCard(controller: c),
-                        const SizedBox(height: 12),
-                        Row(
+      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      body: Stack(
+        children: [
+          const AmbientBackdrop(),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _Header(controller: c)
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: -0.2, end: 0, curve: Curves.easeOut),
+                Expanded(
+                  child: Obx(() {
+                    if (c.isLoading.value) {
+                      return const Center(
+                          child:
+                              CircularProgressIndicator(color: _borderBlue));
+                    }
+                    return RefreshIndicator(
+                      onRefresh: c.loadAll,
+                      color: _borderBlue,
+                      backgroundColor: _cardColor,
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics()),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                                flex: 55,
-                                child: _HorizontalBarCard(controller: c)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                flex: 45,
-                                child: _PieCard(controller: c)),
+                            _KpiRow(controller: c),
+                            const SizedBox(height: 14),
+                            _TimelineCard(controller: c),
+                            const SizedBox(height: 14),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                    flex: 55,
+                                    child: _HorizontalBarCard(controller: c)),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                    flex: 45, child: _PieCard(controller: c)),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            _WorkerList(controller: c),
                           ],
-                        ),
-                        const SizedBox(height: 12),
-                        _WorkerList(controller: c),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+                        )
+                            .animate()
+                            .fadeIn(delay: 120.ms, duration: 450.ms)
+                            .slideY(begin: 0.1, end: 0, curve: Curves.easeOut),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
-            const BottomNavBar(currentIndex: 2),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -86,73 +105,96 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: const BoxDecoration(
-        color: _cardColor,
-        border: Border(bottom: BorderSide(color: Color(0xFF2D3748), width: 1)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
       child: Row(
         children: [
-          Builder(
-            builder: (ctx) => GestureDetector(
-              onTap: () => Scaffold.of(ctx).openDrawer(),
-              child: const Icon(Icons.tune, color: _textSecondary, size: 22),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.45),
+                  blurRadius: 18,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
+            child: const Icon(Icons.insights_outlined,
+                color: Colors.white, size: 26),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Safety & Compliance Dashboard',
-                  style: TextStyle(
-                    color: _textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text('Analytics',
+                    style: styles.AppTextStyles.bodySmall
+                        .copyWith(color: _textSecondary, fontSize: 12)),
                 const SizedBox(height: 2),
-                Text(
-                  'All Sites  |  Last 90 days',
-                  style: TextStyle(
-                      color: _textSecondary.withValues(alpha: 0.8),
-                      fontSize: 11),
-                ),
+                Text('Safety Dashboard',
+                    style: styles.AppTextStyles.headlineSmall
+                        .copyWith(fontSize: 20)),
               ],
             ),
           ),
+          // Filter button
+          Builder(
+            builder: (ctx) => GestureDetector(
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Icon(Icons.tune, color: _textSecondary, size: 20),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
           // LIVE badge
           Obx(() => GestureDetector(
                 onTap: controller.toggleLiveUpdates,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  height: 42,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
                     color: controller.liveUpdates.value
                         ? _borderYellow
-                        : _cardColor,
-                    borderRadius: BorderRadius.circular(20),
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(13),
                     border: Border.all(color: _borderYellow, width: 1.5),
                   ),
-                  child: Text(
-                    'live',
-                    style: TextStyle(
-                      color: controller.liveUpdates.value
-                          ? Colors.black
-                          : _borderYellow,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle,
+                          size: 8,
+                          color: controller.liveUpdates.value
+                              ? Colors.black
+                              : _borderYellow),
+                      const SizedBox(width: 6),
+                      Text(
+                        'LIVE',
+                        style: TextStyle(
+                          color: controller.liveUpdates.value
+                              ? Colors.black
+                              : _borderYellow,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               )),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () => Get.back(),
-            child: const Icon(Icons.close, color: _textSecondary, size: 22),
-          ),
         ],
       ),
     );
@@ -311,11 +353,18 @@ class _KpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor, width: 1.5),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _cardColor,
+            Color.lerp(_cardColor, borderColor, 0.12)!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,10 +412,10 @@ class _TimelineCard extends StatelessWidget {
                 show: true,
                 drawVerticalLine: true,
                 getDrawingHorizontalLine: (_) => FlLine(
-                    color: const Color(0xFF2D3748), strokeWidth: 0.5),
+                    color: _gridLine, strokeWidth: 0.5),
                 getDrawingVerticalLine: (_) =>
                     FlLine(
-                        color: const Color(0xFF2D3748),
+                        color: _gridLine,
                         strokeWidth: 0.5,
                         dashArray: [4, 4]),
               ),
@@ -424,7 +473,7 @@ class _TimelineCard extends StatelessWidget {
               borderData: FlBorderData(
                 show: true,
                 border:
-                    Border.all(color: const Color(0xFF2D3748), width: 0.5),
+                    Border.all(color: _gridLine, width: 0.5),
               ),
               minY: 0,
               maxY: maxY,
@@ -538,12 +587,12 @@ class _HorizontalBarCard extends StatelessWidget {
                 drawVerticalLine: true,
                 drawHorizontalLine: false,
                 getDrawingVerticalLine: (_) =>
-                    FlLine(color: const Color(0xFF2D3748), strokeWidth: 0.5),
+                    FlLine(color: _gridLine, strokeWidth: 0.5),
               ),
               borderData: FlBorderData(
                 show: true,
                 border: Border.all(
-                    color: const Color(0xFF2D3748), width: 0.5),
+                    color: _gridLine, width: 0.5),
               ),
               barGroups: data.asMap().entries.map((e) {
                 final color = _barColors[e.key % _barColors.length];
@@ -706,21 +755,21 @@ class _WorkerRow extends StatelessWidget {
       onTap: () => Get.toNamed(
           AppRoutes.WORKER_DETAILS.replaceAll(':id', worker.workerId)),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: _cardColor,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFF2D3748), width: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: _borderBlue.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.person, color: _borderBlue, size: 20),
             ),
@@ -778,11 +827,18 @@ class _DashCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _cardColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF2D3748), width: 0.5),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

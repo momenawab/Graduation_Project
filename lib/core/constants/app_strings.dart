@@ -1,6 +1,6 @@
 class AppStrings {
   // App name
-  static const String appName = 'SafeSight';
+  static const String appName = 'SafeEye';
   static const String tagline = 'AI-POWERED SAFETY COMPLIANCE';
 
   // Navigation titles
@@ -92,7 +92,7 @@ class AppStrings {
   static const String biometricAuth = 'Biometric Auth';
   static const String privacySettings = 'Privacy Settings';
   static const String logOut = 'Log Out';
-  static const String version = 'SAFESIGHT V1.0.0 (STABLE)';
+  static const String version = 'SAFEEYE V1.0.0 (STABLE)';
 
   // Error messages
   static const String workerIdMustBe8Digits = 'Worker ID must be 8 digits';

@@ -219,7 +219,7 @@ class LoginScreen extends StatelessWidget {
 
                 // Footer text
                 Text(
-                  'SafeSight PPE Detection System',
+                  'SafeEye PPE Detection System',
                   style: styles.AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),

@@ -5,6 +5,9 @@ import '../../data/services/api/detection_api_service.dart';
 import '../../data/services/api/auth_api_service.dart';
 import '../../data/services/api/worker_api.dart';
 import '../../data/services/api/camera_api.dart';
+import '../../data/services/api/settings_api.dart';
+import '../../data/services/api/report_api.dart';
+import '../../data/services/api/alert_api.dart';
 import '../../data/services/websocket/notification_stream.dart';
 import '../../presentation/controllers/monitoring_controller.dart';
 import '../../presentation/controllers/video_test_controller.dart';
@@ -34,6 +37,9 @@ class GlobalBinding extends Bindings {
     Get.lazyPut<AuthApiService>(() => AuthApiService(), fenix: true);
     Get.lazyPut<WorkerApi>(() => WorkerApi(apiClient: Get.find<ApiClient>()), fenix: true);
     Get.lazyPut<CameraApi>(() => CameraApi(apiClient: Get.find<ApiClient>()), fenix: true);
+    Get.lazyPut<SettingsApi>(() => SettingsApi(apiClient: Get.find<ApiClient>()), fenix: true);
+    Get.lazyPut<ReportApi>(() => ReportApi(apiClient: Get.find<ApiClient>()), fenix: true);
+    Get.lazyPut<AlertApi>(() => AlertApi(apiClient: Get.find<ApiClient>()), fenix: true);
 
     // WebSocket services
     Get.lazyPut<NotificationStream>(() => NotificationStream(), fenix: true);

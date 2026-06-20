@@ -1,7 +1,7 @@
 import '../../../core/constants/api_constants.dart';
 import 'api_client.dart';
 
-/// Camera API — wired to the SafeSight Django cameras endpoints.
+/// Camera API — wired to the SafeEye Django cameras endpoints.
 ///
 /// Cameras are metadata entities (name, IP, location, status). Live frame
 /// analysis is handled separately by the `/ws/detect/` WebSocket.
@@ -31,6 +31,7 @@ class CameraApi {
     required String name,
     String? ipAddress,
     String? location,
+    List<String>? requiredPpe,
   }) async {
     final response = await apiClient.post<Map<String, dynamic>>(
       ApiConstants.cameras.fullPath,
@@ -38,6 +39,8 @@ class CameraApi {
         'name': name,
         if (ipAddress != null) 'ip_address': ipAddress,
         if (location != null) 'location': location,
+        // Per-camera PPE policy the AI enforces for this camera/zone.
+        if (requiredPpe != null) 'required_ppe': requiredPpe,
       },
     );
     return response.data ?? <String, dynamic>{};

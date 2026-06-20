@@ -4,6 +4,7 @@ import '../../data/models/user_settings.dart' as models;
 import '../../data/services/storage_service.dart';
 import '../../data/services/api/api_client.dart';
 import '../../data/services/api/auth_api_service.dart';
+import '../../data/services/api/settings_api.dart';
 import '../../routes/app_routes.dart';
 
 /// Controller for managing app settings and user profile
@@ -40,11 +41,30 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Initialize toggles from user settings
+    // Initialize toggles from the current (default) settings.
     hazardAlerts.value = userSettings.value.hazardAlerts;
     safeZoneMonitoring.value = userSettings.value.safeZoneMonitoring;
     if (Get.isRegistered<StorageService>()) {
       language.value = Get.find<StorageService>().userLanguage;
+    }
+    // Replace the placeholder profile with real data from the backend.
+    loadProfile();
+  }
+
+  /// Loads the authenticated user's profile/settings from the API.
+  /// On any failure the existing values are kept, so the screen still renders.
+  Future<void> loadProfile() async {
+    if (!Get.isRegistered<SettingsApi>()) return;
+    try {
+      isLoading.value = true;
+      final loaded = await Get.find<SettingsApi>().getSettings();
+      userSettings.value = loaded;
+      hazardAlerts.value = loaded.hazardAlerts;
+      safeZoneMonitoring.value = loaded.safeZoneMonitoring;
+    } catch (_) {
+      // Offline or unauthenticated — keep current values silently.
+    } finally {
+      isLoading.value = false;
     }
   }
 

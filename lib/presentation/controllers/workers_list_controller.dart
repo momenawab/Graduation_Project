@@ -18,6 +18,9 @@ class WorkersListController extends GetxController {
   /// Observable for search query
   final RxString searchQuery = ''.obs;
 
+  /// True once per-worker violation counts have been merged from the backend.
+  final RxBool statsLoaded = false.obs;
+
   /// Filtered workers list based on search
   List<model.Worker> get filteredWorkers {
     if (searchQuery.value.isEmpty) {
@@ -43,6 +46,33 @@ class WorkersListController extends GetxController {
       errorMessage.value = 'Failed to load workers: ${e.toString()}';
     } finally {
       isLoading.value = false;
+    }
+    // The list endpoint has no per-worker counts, so merge them from the
+    // violations-summary endpoint (no backend change required).
+    loadViolationCounts();
+  }
+
+  /// Fetches per-worker violation counts and merges them into [workers], so the
+  /// card badges and the KPI chips show real data. Fails silently when offline.
+  Future<void> loadViolationCounts() async {
+    try {
+      final summary = await _workerApi.getViolationsSummary();
+      // Build a { worker_id -> violation_count } lookup.
+      final counts = <String, int>{};
+      for (final entry in summary) {
+        if (entry is Map) {
+          final id = entry['worker_id']?.toString();
+          final count = (entry['violation_count'] as num?)?.toInt() ?? 0;
+          if (id != null) counts[id] = count;
+        }
+      }
+      // Merge into the loaded workers without dropping any.
+      workers.value = workers
+          .map((w) => w.copyWith(violationCount: counts[w.id] ?? 0))
+          .toList();
+      statsLoaded.value = true;
+    } catch (_) {
+      // Offline / unauthorized — leave counts at their last known values.
     }
   }
 
@@ -77,6 +107,7 @@ class WorkersListController extends GetxController {
     isLoading.close();
     errorMessage.close();
     searchQuery.close();
+    statsLoaded.close();
     super.onClose();
   }
 }

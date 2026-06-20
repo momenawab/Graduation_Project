@@ -138,12 +138,12 @@ class AlertConfigController extends GetxController {
 
   /// Gets color for enabled state
   Color getEnabledColor(bool enabled) {
-    return enabled ? const Color(0xFF00BCD4) : const Color(0xFF9E9E9E);
+    return enabled ? AppColors.accent : AppColors.textDisabled;
   }
 
   /// Gets color for delivery mode selection
   Color getDeliveryModeColor(DeliveryMode mode, DeliveryMode selected) {
-    return mode == selected ? const Color(0xFF00BCD4) : const Color(0xFF9E9E9E);
+    return mode == selected ? AppColors.accent : AppColors.textDisabled;
   }
 
   /// Commits all alert configuration changes

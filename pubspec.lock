@@ -693,6 +693,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  liquid_glass_widgets:
+    dependency: "direct main"
+    description:
+      name: liquid_glass_widgets
+      sha256: "776adcdb7d48af0b935642425936813074355830eb0a47ecca8b227549d5b057"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.16.3"
   logging:
     dependency: transitive
     description:

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/worker_controller.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/app_button.dart';
 import '../widgets/common/app_input.dart';
 import '../widgets/common/top_app_bar.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/text_styles.dart' as styles;
-import '../../data/models/ppe_item.dart';
 
 /// Add Worker screen for registering new personnel.
 /// Includes form validation, dropdowns, and PPE selection chips.
@@ -25,16 +26,22 @@ class AddWorkerScreen extends StatelessWidget {
         title: AppStrings.addNewWorker,
         onBackPressed: () => Get.back(),
       ),
-      body: SafeArea(
+      body: Stack(
+        children: [
+          const AmbientBackdrop(),
+          SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Photo Picker Section
-              _buildPhotoPickerSection(controller),
+              _buildPhotoPickerSection(controller)
+                  .animate()
+                  .fadeIn(duration: 400.ms)
+                  .slideY(begin: 0.1, end: 0, curve: Curves.easeOut),
 
               const SizedBox(height: 24),
 
@@ -75,6 +82,8 @@ class AddWorkerScreen extends StatelessWidget {
             ],
           ),
         ),
+          ),
+        ],
       ),
     );
   }
@@ -334,11 +343,12 @@ class AddWorkerScreen extends StatelessWidget {
                   Icons.expand_more,
                   color: AppColors.textSecondary,
                 ),
-                items: WorkerController.departments.map((String department) {
+                items: WorkerController.departmentOptions.entries
+                    .map((entry) {
                   return DropdownMenuItem<String>(
-                    value: department,
+                    value: entry.key,
                     child: Text(
-                      department,
+                      entry.value,
                       style: styles.AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
                       ),

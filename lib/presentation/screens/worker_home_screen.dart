@@ -140,7 +140,7 @@ class WorkerHomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SafeSight Worker',
+                    'SafeEye Worker',
                     style: styles.AppTextStyles.headlineSmall.copyWith(
                       color: AppColors.textPrimary,
                       fontSize: 18,

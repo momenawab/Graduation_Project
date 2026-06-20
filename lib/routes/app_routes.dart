@@ -9,6 +9,7 @@ abstract class AppRoutes {
   static const String ALERT_CONFIG = '/alerts/config';
   static const String INSTRUCTIONS = '/instructions';
   static const String WORKER_MONITOR = '/worker-monitor';
+  static const String CAMERA_MANAGEMENT = '/cameras-manage';
   static const String SETTINGS = '/settings';
 
   // Incident reporting (F15)

@@ -59,7 +59,11 @@ class Worker extends Equatable {
           : json['createdAt'] != null
               ? DateTime.parse(json['createdAt'] as String)
               : DateTime.now(),
-      violationCount: json['violationCount'] as int? ?? 0,
+      // Backend uses snake_case (`violation_count`); fall back to camelCase
+      // and 0 when the list endpoint doesn't include a per-worker count.
+      violationCount: (json['violation_count'] ?? json['violationCount']) is num
+          ? ((json['violation_count'] ?? json['violationCount']) as num).toInt()
+          : 0,
     );
   }
 

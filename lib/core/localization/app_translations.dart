@@ -9,7 +9,7 @@ class AppTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
         'en': {
-          'app_name': 'SafeSight',
+          'app_name': 'SafeEye',
           'login': 'Login',
           'logout': 'Logout',
           'sign_in': 'Sign In',

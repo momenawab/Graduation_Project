@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../controllers/worker_monitor_controller.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/app_button.dart';
+import '../widgets/common/hero_badge.dart';
 import '../widgets/common/top_app_bar.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/detection_result.dart';
@@ -24,24 +27,29 @@ class WorkerMonitorScreen extends StatelessWidget {
         title: 'Workers Monitor',
         showBackButton: true,
       ),
-      body: SafeArea(
-        child: Obx(() {
-          // Touch all state-machine observables so Obx always tracks them,
-          // even when the chosen branch delegates to nested Obx widgets.
-          final hasImage = controller.hasImage.value;
-          final isAnalyzing = controller.isAnalyzing.value;
-          final result = controller.detectionResult.value;
+      body: Stack(
+        children: [
+          const AmbientBackdrop(),
+          SafeArea(
+            child: Obx(() {
+              // Touch all state-machine observables so Obx always tracks them,
+              // even when the chosen branch delegates to nested Obx widgets.
+              final hasImage = controller.hasImage.value;
+              final isAnalyzing = controller.isAnalyzing.value;
+              final result = controller.detectionResult.value;
 
-          if (!hasImage) {
-            return _buildEmptyState(controller);
-          } else if (isAnalyzing) {
-            return _buildAnalyzingState(controller);
-          } else if (result != null) {
-            return _buildResultState(controller);
-          } else {
-            return _buildPreviewState(controller);
-          }
-        }),
+              if (!hasImage) {
+                return _buildEmptyState(controller);
+              } else if (isAnalyzing) {
+                return _buildAnalyzingState(controller);
+              } else if (result != null) {
+                return _buildResultState(controller);
+              } else {
+                return _buildPreviewState(controller);
+              }
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -54,24 +62,21 @@ class WorkerMonitorScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_search,
-              size: 80,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(height: 24),
-            Text(
+            const HeroBadge(icon: Icons.person_search),
+            const SizedBox(height: 28),
+            const Text(
               'Scan & Identify Workers',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               'Upload an image to identify workers using face recognition and check their PPE compliance.',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.textSecondary, height: 1.4),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -102,7 +107,8 @@ class WorkerMonitorScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 450.ms).slideY(
+        begin: 0.1, end: 0, curve: Curves.easeOut);
   }
 
   /// Preview state - image preview, confidence slider, "Scan Workers" button.
@@ -277,7 +283,7 @@ class WorkerMonitorScreen extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
+            AppColors.primary.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -285,7 +291,7 @@ class WorkerMonitorScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -304,7 +310,7 @@ class WorkerMonitorScreen extends StatelessWidget {
               Container(
                 width: 1,
                 height: 40,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               _buildSummaryItem(
                 '$identified',
@@ -314,7 +320,7 @@ class WorkerMonitorScreen extends StatelessWidget {
               Container(
                 width: 1,
                 height: 40,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               _buildSummaryItem(
                 '$unknown',
@@ -326,7 +332,7 @@ class WorkerMonitorScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Container(
             height: 1,
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           Row(
@@ -340,7 +346,7 @@ class WorkerMonitorScreen extends StatelessWidget {
               Container(
                 width: 1,
                 height: 40,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               _buildSummaryItem(
                 '${result.nonCompliant}',
@@ -371,7 +377,7 @@ class WorkerMonitorScreen extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -391,12 +397,12 @@ class WorkerMonitorScreen extends StatelessWidget {
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.1),
+            color: statusColor.withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -412,8 +418,8 @@ class WorkerMonitorScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isIdentified
-                      ? AppColors.success.withOpacity(0.15)
-                      : AppColors.textSecondary.withOpacity(0.15),
+                      ? AppColors.success.withValues(alpha: 0.15)
+                      : AppColors.textSecondary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -431,7 +437,9 @@ class WorkerMonitorScreen extends StatelessWidget {
                   children: [
                     Text(
                       isIdentified
-                          ? detection.workerId!
+                          ? (detection.workerName?.isNotEmpty == true
+                              ? detection.workerName!
+                              : detection.workerId!)
                           : 'Unknown Worker',
                       style: TextStyle(
                         fontSize: 18,
@@ -466,8 +474,8 @@ class WorkerMonitorScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: isIdentified
-            ? AppColors.success.withOpacity(0.15)
-            : AppColors.textSecondary.withOpacity(0.15),
+            ? AppColors.success.withValues(alpha: 0.15)
+            : AppColors.textSecondary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -501,9 +509,9 @@ class WorkerMonitorScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -526,7 +534,7 @@ class WorkerMonitorScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: color.withOpacity(0.8),
+                  color: color.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -541,7 +549,7 @@ class WorkerMonitorScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.textSecondary.withOpacity(0.05),
+        color: AppColors.textSecondary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -584,7 +592,7 @@ class WorkerMonitorScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textSecondary.withOpacity(0.1),
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -607,7 +615,7 @@ class WorkerMonitorScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textSecondary.withOpacity(0.08),
+            color: AppColors.textSecondary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -624,7 +632,7 @@ class WorkerMonitorScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -650,7 +658,7 @@ class WorkerMonitorScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: _getThresholdColor(
                               controller.confidenceThreshold.value)
-                          .withOpacity(0.15),
+                          .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -677,9 +685,9 @@ class WorkerMonitorScreen extends StatelessWidget {
                 overlayShape:
                     const RoundSliderOverlayShape(overlayRadius: 20),
                 activeTrackColor: thresholdColor,
-                inactiveTrackColor: thresholdColor.withOpacity(0.2),
+                inactiveTrackColor: thresholdColor.withValues(alpha: 0.2),
                 thumbColor: thresholdColor,
-                overlayColor: thresholdColor.withOpacity(0.2),
+                overlayColor: thresholdColor.withValues(alpha: 0.2),
               ),
               child: Slider(
                 value: controller.confidenceThreshold.value,

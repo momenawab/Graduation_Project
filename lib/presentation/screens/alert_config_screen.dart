@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../controllers/alert_config_controller.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../../data/models/alert_config.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/text_styles.dart' as styles;
 
-/// Alert configuration screen with toggle switches and delivery mode selection.
+/// Thresholds / Alert configuration screen — toggle which safety alerts fire,
+/// pick their delivery mode, and commit changes. Styled to match the redesign.
 @immutable
 class AlertConfigScreen extends StatelessWidget {
   const AlertConfigScreen({super.key});
@@ -16,78 +19,19 @@ class AlertConfigScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top app bar with back button, title, and menu icon
-            _buildTopAppBar(),
-
-            // Content area
-            Expanded(child: _buildContent(controller)),
-
-            // Bottom navigation
-            const _AlertConfigBottomNav(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds top app bar with back button, title, and menu icon.
-  Widget _buildTopAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
         children: [
-          // Back button and title
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: AppColors.textPrimary,
-                    size: 24,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'ALERT CONFIG',
-                style: styles.AppTextStyles.headlineSmall.copyWith(
-                  color: AppColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-
-          // Menu icon button
-          GestureDetector(
-            onTap: () {
-              // TODO: Open menu options
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.menu,
-                color: AppColors.textPrimary,
-                size: 24,
-              ),
+          const AmbientBackdrop(),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(controller)
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: -0.2, end: 0, curve: Curves.easeOut),
+                Expanded(child: _buildContent(controller)),
+                _buildCommitButton(controller),
+              ],
             ),
           ),
         ],
@@ -95,252 +39,261 @@ class AlertConfigScreen extends StatelessWidget {
     );
   }
 
-  /// Builds main content area.
+  /// Brand header with back button and title.
+  Widget _buildHeader(AlertConfigController controller) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.45),
+                  blurRadius: 18,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.tune_rounded, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Configuration',
+                    style: styles.AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary, fontSize: 12)),
+                const SizedBox(height: 2),
+                Text('Thresholds',
+                    style: styles.AppTextStyles.headlineSmall.copyWith(fontSize: 22)),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: controller.resetToDefaults,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(Icons.restart_alt,
+                  color: AppColors.textSecondary, size: 22),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent(AlertConfigController controller) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
-
-          // Safety Critical Systems section
-          _buildSafetyCriticalSystemsSection(controller),
-
+          _buildSection(
+            controller,
+            title: 'Safety Critical Systems',
+            subtitle: 'High-priority alerts, delivered immediately',
+            configs: () => controller.safetyCriticalSystems,
+          ).animate().fadeIn(delay: 100.ms, duration: 420.ms),
           const SizedBox(height: 24),
-
-          // Intelligence Feed section
-          _buildIntelligenceFeedSection(controller),
-
-          const SizedBox(height: 24),
-
-          // Commit Changes button
-          _buildCommitButton(controller),
-
-          const SizedBox(height: 16),
+          _buildSection(
+            controller,
+            title: 'Intelligence Feed',
+            subtitle: 'Informational updates and metrics',
+            configs: () => controller.intelligenceFeed,
+          ).animate().fadeIn(delay: 200.ms, duration: 420.ms),
         ],
       ),
     );
   }
 
-  /// Builds Safety Critical Systems section.
-  Widget _buildSafetyCriticalSystemsSection(AlertConfigController controller) {
+  Widget _buildSection(
+    AlertConfigController controller, {
+    required String title,
+    required String subtitle,
+    required List<AlertConfig> Function() configs,
+  }) {
     return Obx(() {
-      final safetySystems = controller.safetyCriticalSystems;
-
+      final list = configs();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section title
-          Text(
-            'Safety Critical Systems',
-            style: styles.AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-
+          Text(title,
+              style: styles.AppTextStyles.bodyLarge
+                  .copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: styles.AppTextStyles.bodySmall),
           const SizedBox(height: 12),
-
-          // Alert toggles
-          ...safetySystems.map((config) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _AlertToggleCard(
-                icon: controller.getAlertTypeIcon(config.alertType),
-                title: controller.getAlertTypeName(config.alertType),
-                enabled: config.enabled,
-                enabledColor: controller.getEnabledColor(config.enabled),
-                onTap: () => controller.toggleAlert(config.alertType),
-                showDeliveryMode: config.alertType == AlertType.ppeCompliance,
-                deliveryMode: config.deliveryMode,
-                onDeliveryModeChanged:
-                    config.alertType == AlertType.ppeCompliance
-                    ? (mode) =>
-                          controller.setDeliveryMode(config.alertType, mode)
-                    : null,
-                getDeliveryModeColor: (mode) =>
-                    controller.getDeliveryModeColor(mode, config.deliveryMode),
-              ),
-            );
-          }).toList(),
-        ],
-      );
-    });
-  }
-
-  /// Builds Intelligence Feed section.
-  Widget _buildIntelligenceFeedSection(AlertConfigController controller) {
-    return Obx(() {
-      final intelligenceFeed = controller.intelligenceFeed;
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section title
-          Text(
-            'Intelligence Feed',
-            style: styles.AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Alert toggles
-          ...intelligenceFeed.map((config) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _AlertToggleCard(
-                icon: controller.getAlertTypeIcon(config.alertType),
-                title: controller.getAlertTypeName(config.alertType),
-                enabled: config.enabled,
-                enabledColor: controller.getEnabledColor(config.enabled),
-                onTap: () => controller.toggleAlert(config.alertType),
-                getDeliveryModeColor: (mode) =>
-                    controller.getDeliveryModeColor(mode, config.deliveryMode),
-              ),
-            );
-          }).toList(),
-        ],
-      );
-    });
-  }
-
-  /// Builds commit changes button with gradient background.
-  Widget _buildCommitButton(AlertConfigController controller) {
-    return Obx(() {
-      return GestureDetector(
-        onTap: controller.isLoading.value ? null : controller.commitChanges,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00BCD4), Color(0xFF9C27B0)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: controller.isLoading.value
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  'COMMIT CHANGES',
-                  textAlign: TextAlign.center,
-                  style: styles.AppTextStyles.bodyLarge.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+          ...list.map((config) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _AlertToggleCard(
+                  icon: controller.getAlertTypeIcon(config.alertType),
+                  title: controller.getAlertTypeName(config.alertType),
+                  enabled: config.enabled,
+                  onChanged: (_) => controller.toggleAlert(config.alertType),
+                  showDeliveryMode:
+                      config.alertType == AlertType.ppeCompliance,
+                  deliveryMode: config.deliveryMode,
+                  onDeliveryModeChanged:
+                      config.alertType == AlertType.ppeCompliance
+                          ? (mode) =>
+                              controller.setDeliveryMode(config.alertType, mode)
+                          : null,
                 ),
-        ),
+              )),
+        ],
       );
     });
+  }
+
+  /// Commit changes button pinned above the bottom edge.
+  Widget _buildCommitButton(AlertConfigController controller) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: Obx(() {
+        return GestureDetector(
+          onTap: controller.isLoading.value ? null : controller.commitChanges,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: controller.isLoading.value
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Commit Changes',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      }),
+    );
   }
 }
 
-/// Alert toggle card widget with icon, title, and toggle switch.
+/// Alert toggle card with icon chip, title, switch, and optional delivery tabs.
 @immutable
 class _AlertToggleCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final bool enabled;
-  final Color enabledColor;
-  final VoidCallback onTap;
+  final ValueChanged<bool> onChanged;
   final bool showDeliveryMode;
   final DeliveryMode deliveryMode;
   final ValueChanged<DeliveryMode>? onDeliveryModeChanged;
-  final Color Function(DeliveryMode) getDeliveryModeColor;
 
   const _AlertToggleCard({
     required this.icon,
     required this.title,
     required this.enabled,
-    required this.enabledColor,
-    required this.onTap,
+    required this.onChanged,
     this.showDeliveryMode = false,
     this.deliveryMode = DeliveryMode.dual,
     this.onDeliveryModeChanged,
-    required this.getDeliveryModeColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = enabled ? AppColors.accent : AppColors.textDisabled;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: enabled
+              ? AppColors.accent.withValues(alpha: 0.3)
+              : AppColors.border,
+        ),
       ),
       child: Column(
         children: [
-          // Main row with icon, title, and toggle
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Icon and title
-              Row(
-                children: [
-                  Icon(icon, color: enabledColor, size: 20),
-                  const SizedBox(width: 12),
-                  Text(
-                    title,
-                    style: styles.AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Toggle switch
-              GestureDetector(
-                onTap: onTap,
-                child: Container(
-                  width: 52,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: enabled
-                        ? const Color(0xFF00BCD4)
-                        : const Color(0xFF9E9E9E),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Align(
-                      alignment: enabled
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.25)),
                 ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(title, style: styles.AppTextStyles.bodyLarge),
+              ),
+              Switch(
+                value: enabled,
+                onChanged: onChanged,
+                activeColor: AppColors.accent,
+                activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
               ),
             ],
           ),
-
-          // Delivery mode tabs (only for PPE Compliance)
           if (showDeliveryMode && onDeliveryModeChanged != null) ...[
             const SizedBox(height: 12),
             _DeliveryModeTabs(
               selectedMode: deliveryMode,
-              onModeChanged: onDeliveryModeChanged,
-              getModeColor: getDeliveryModeColor,
+              onModeChanged: onDeliveryModeChanged!,
             ),
           ],
         ],
@@ -349,186 +302,56 @@ class _AlertToggleCard extends StatelessWidget {
   }
 }
 
-/// Delivery mode tabs widget for selecting Audio, Haptic, or Dual mode.
+/// Segmented control for Audio / Haptic / Dual delivery modes.
 @immutable
 class _DeliveryModeTabs extends StatelessWidget {
   final DeliveryMode selectedMode;
-  final ValueChanged<DeliveryMode>? onModeChanged;
-  final Color Function(DeliveryMode) getModeColor;
+  final ValueChanged<DeliveryMode> onModeChanged;
 
   const _DeliveryModeTabs({
     required this.selectedMode,
     required this.onModeChanged,
-    required this.getModeColor,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _DeliveryModeTab(
-            label: 'Audio',
-            mode: DeliveryMode.audio,
-            selectedMode: selectedMode,
-            onModeChanged: onModeChanged,
-            getModeColor: getModeColor,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _DeliveryModeTab(
-            label: 'Haptic',
-            mode: DeliveryMode.haptic,
-            selectedMode: selectedMode,
-            onModeChanged: onModeChanged,
-            getModeColor: getModeColor,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _DeliveryModeTab(
-            label: 'Dual',
-            mode: DeliveryMode.dual,
-            selectedMode: selectedMode,
-            onModeChanged: onModeChanged,
-            getModeColor: getModeColor,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Single delivery mode tab.
-@immutable
-class _DeliveryModeTab extends StatelessWidget {
-  final String label;
-  final DeliveryMode mode;
-  final DeliveryMode selectedMode;
-  final ValueChanged<DeliveryMode>? onModeChanged;
-  final Color Function(DeliveryMode) getModeColor;
-
-  const _DeliveryModeTab({
-    required this.label,
-    required this.mode,
-    required this.selectedMode,
-    required this.onModeChanged,
-    required this.getModeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = mode == selectedMode;
-    final color = getModeColor(mode);
-
-    return GestureDetector(
-      onTap: onModeChanged != null ? () => onModeChanged!(mode) : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: styles.AppTextStyles.bodySmall.copyWith(
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Alert config bottom navigation widget.
-@immutable
-class _AlertConfigBottomNav extends StatelessWidget {
-  const _AlertConfigBottomNav();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
-      decoration: const BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(
-          top: BorderSide(color: AppColors.textSecondary, width: 0.5),
-        ),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavItem(
-            icon: Icons.grid_view,
-            label: 'Grid',
-            isActive: false,
-            onTap: () => Get.toNamed('/'),
-          ),
-          _NavItem(
-            icon: Icons.remove_red_eye,
-            label: 'Alerts',
-            isActive: true,
-            onTap: () {},
-          ),
-          _NavItem(
-            icon: Icons.bar_chart,
-            label: 'Chart',
-            isActive: false,
-            onTap: () => Get.toNamed('/reports'),
-          ),
-          _NavItem(
-            icon: Icons.person,
-            label: 'User',
-            isActive: false,
-            onTap: () => Get.toNamed('/settings'),
-          ),
+          _tab('Audio', DeliveryMode.audio),
+          _tab('Haptic', DeliveryMode.haptic),
+          _tab('Dual', DeliveryMode.dual),
         ],
       ),
     );
   }
-}
 
-/// Navigation item widget for bottom nav.
-@immutable
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isActive ? const Color(0xFF00BCD4) : AppColors.textSecondary,
-            size: 24,
+  Widget _tab(String label, DeliveryMode mode) {
+    final isSelected = mode == selectedMode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onModeChanged(mode),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
           ),
-          const SizedBox(height: 4),
-          Text(
+          child: Text(
             label,
+            textAlign: TextAlign.center,
             style: styles.AppTextStyles.bodySmall.copyWith(
-              color: isActive
-                  ? const Color(0xFF00BCD4)
-                  : AppColors.textSecondary,
-              fontSize: 11,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

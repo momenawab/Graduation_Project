@@ -5,7 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/text_styles.dart' as styles;
 
-/// Splash screen with SafeSight branding and loading indicator.
+/// Splash screen with SafeEye branding and loading indicator.
 @immutable
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});

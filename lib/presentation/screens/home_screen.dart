@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
-import '../widgets/common/app_card.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/bottom_nav_bar.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/text_styles.dart' as styles;
 
-/// Home screen with SafeSight branding, function cards, and navigation.
+/// Home screen — modern control-center layout with a live-status hero,
+/// quick stats and a bento grid of actions, over a floating liquid-glass nav bar.
 @immutable
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,209 +20,48 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      // Let page content flow behind the floating glass nav bar.
+      extendBody: true,
       bottomNavigationBar: const BottomNavBar(currentIndex: 0),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top app bar with profile icon
-            _buildTopAppBar(controller),
-
-            // Status banner
-            _buildStatusBanner(controller),
-
-            // Function cards grid
-            Expanded(child: _buildFunctionCardsGrid(controller)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds the top app bar with profile icon.
-  Widget _buildTopAppBar(HomeController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
         children: [
-          // App branding
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.security,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.appName,
-                    style: styles.AppTextStyles.headlineSmall.copyWith(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Text(
-                    AppStrings.tagline,
-                    style: styles.AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Profile icon button
-          GestureDetector(
-            onTap: controller.navigateToSettings,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the status banner showing system status.
-  Widget _buildStatusBanner(HomeController controller) {
-    return Obx(() {
-      final statusColor = controller.getStatusColor();
-      final statusIcon = controller.getStatusIcon();
-
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: statusColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: statusColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(statusIcon, color: statusColor, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
+          // Ambient brand glow behind the content.
+          const AmbientBackdrop(),
+          SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _Header(controller: controller)
+                      .animate()
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: -0.2, end: 0, curve: Curves.easeOut),
+                  const SizedBox(height: 20),
+                  _LiveMonitoringHero(controller: controller)
+                      .animate()
+                      .fadeIn(delay: 100.ms, duration: 450.ms)
+                      .slideY(begin: 0.15, end: 0, curve: Curves.easeOut),
+                  const SizedBox(height: 16),
+                  _StatsRow(controller: controller)
+                      .animate()
+                      .fadeIn(delay: 200.ms, duration: 450.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                  const SizedBox(height: 28),
                   Text(
-                    AppStrings.activeMonitoring,
-                    style: styles.AppTextStyles.label.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
+                    'Quick Actions',
+                    style: styles.AppTextStyles.headlineSmall.copyWith(
+                      fontSize: 18,
+                      letterSpacing: 0.2,
                     ),
-                  ),
-                  Text(
-                    AppStrings.allSystemsNormal,
-                    style: styles.AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  ).animate().fadeIn(delay: 280.ms, duration: 400.ms),
+                  const SizedBox(height: 14),
+                  _ActionsGrid(controller: controller),
                 ],
               ),
             ),
-            // Refresh button
-            GestureDetector(
-              onTap: controller.refreshSystemStatus,
-              child: Icon(Icons.refresh, color: statusColor, size: 20),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  /// Builds the 2x3 function cards grid.
-  Widget _buildFunctionCardsGrid(HomeController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.2,
-        children: [
-          // Monitoring card
-          _FunctionCard(
-            icon: Icons.videocam,
-            title: 'Monitoring',
-            subtitle: 'Real-time detection',
-            color: AppColors.primary,
-            onTap: controller.navigateToMonitoring,
-          ),
-
-          // Reports card
-          _FunctionCard(
-            icon: Icons.description,
-            title: 'Reports',
-            subtitle: 'Safety analytics',
-            color: AppColors.primary,
-            onTap: controller.navigateToReports,
-          ),
-
-          // Personnel card
-          _FunctionCard(
-            icon: Icons.people,
-            title: 'Add Worker',
-            subtitle: 'Worker management',
-            color: AppColors.primary,
-            onTap: controller.navigateToAddWorker,
-          ),
-
-          // Thresholds card
-          _FunctionCard(
-            icon: Icons.warning,
-            title: 'Thresholds',
-            subtitle: 'Alert settings',
-            color: AppColors.warning,
-            onTap: controller.navigateToAlertConfig,
-          ),
-
-          // Media card
-          _FunctionCard(
-            icon: Icons.cloud_upload,
-            title: 'Media',
-            subtitle: 'Upload images',
-            color: AppColors.primary,
-            onTap: controller.navigateToUploadDetection,
-          ),
-
-          // Workers Monitor card
-          _FunctionCard(
-            icon: Icons.person_search,
-            title: 'Workers Monitor',
-            subtitle: 'Scan & identify',
-            color: AppColors.primary,
-            onTap: controller.navigateToWorkerMonitor,
           ),
         ],
       ),
@@ -228,71 +69,397 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Function card widget for home screen grid.
-@immutable
-class _FunctionCard extends StatelessWidget {
+/// Greeting row with brand mark and profile button.
+class _Header extends StatelessWidget {
+  final HomeController controller;
+  const _Header({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            gradient: AppColors.brandGradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.45),
+                blurRadius: 18,
+                spreadRadius: -2,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.shield_outlined, color: Colors.white, size: 26),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome back',
+                style: styles.AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                AppStrings.appName,
+                style: styles.AppTextStyles.headlineSmall.copyWith(fontSize: 22),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: controller.navigateToSettings,
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Icon(Icons.person_outline, color: AppColors.textPrimary),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Large hero card showing live system status with an animated pulse.
+class _LiveMonitoringHero extends StatelessWidget {
+  final HomeController controller;
+  const _LiveMonitoringHero({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final Color statusColor = controller.getStatusColor();
+      final int cameras = controller.systemStatus.value.activeCameras;
+
+      return GestureDetector(
+        onTap: controller.navigateToMonitoring,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1E3A8A), Color(0xFF152444)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.25),
+                blurRadius: 28,
+                spreadRadius: -6,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _PulseDot(color: statusColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.activeMonitoring,
+                    style: styles.AppTextStyles.label.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: controller.refreshSystemStatus,
+                    child: const Icon(Icons.refresh,
+                        color: AppColors.textSecondary, size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                AppStrings.allSystemsNormal,
+                style: styles.AppTextStyles.headlineMedium.copyWith(fontSize: 24),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$cameras cameras streaming in real time',
+                style: styles.AppTextStyles.bodyMedium,
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Text(
+                    'Open live view',
+                    style: styles.AppTextStyles.label.copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward,
+                      color: AppColors.accent, size: 18),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+/// Animated pulsing status dot.
+class _PulseDot extends StatelessWidget {
+  final Color color;
+  const _PulseDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    )
+        .animate(onPlay: (c) => c.repeat())
+        .scale(
+          duration: 900.ms,
+          begin: const Offset(1, 1),
+          end: const Offset(1.6, 1.6),
+        )
+        .fadeOut(duration: 900.ms);
+  }
+}
+
+/// Row of three compact KPI chips.
+class _StatsRow extends StatelessWidget {
+  final HomeController controller;
+  const _StatsRow({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final bool loaded = controller.statsLoaded.value;
+      final int cameras = controller.systemStatus.value.activeCameras;
+      final String compliance =
+          loaded ? '${controller.complianceRate.value}%' : '—';
+      final String alerts =
+          loaded ? '${controller.alertCount.value}' : '—';
+      return Row(
+        children: [
+          Expanded(
+            child: _StatChip(
+              icon: Icons.videocam_outlined,
+              value: '$cameras',
+              label: 'Cameras',
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatChip(
+              icon: Icons.verified_outlined,
+              value: compliance,
+              label: 'Compliance',
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatChip(
+              icon: Icons.notifications_active_outlined,
+              value: alerts,
+              label: 'Alerts',
+              color: AppColors.warning,
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatChip({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: styles.AppTextStyles.headlineSmall.copyWith(fontSize: 18),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: styles.AppTextStyles.bodySmall.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bento grid of primary actions.
+class _ActionsGrid extends StatelessWidget {
+  final HomeController controller;
+  const _ActionsGrid({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <_ActionData>[
+      _ActionData(Icons.videocam_rounded, 'Monitoring', 'Real-time detection',
+          AppColors.primary, controller.navigateToMonitoring),
+      _ActionData(Icons.bar_chart_rounded, 'Reports', 'Safety analytics',
+          AppColors.accent, controller.navigateToReports),
+      _ActionData(Icons.person_add_alt_1_rounded, 'Add Worker',
+          'Worker management', AppColors.success, controller.navigateToAddWorker),
+      _ActionData(Icons.tune_rounded, 'Thresholds', 'Alert settings',
+          AppColors.warning, controller.navigateToAlertConfig),
+      _ActionData(Icons.cloud_upload_rounded, 'Media', 'Upload images',
+          AppColors.accent, controller.navigateToUploadDetection),
+      _ActionData(Icons.person_search_rounded, 'Workers Monitor',
+          'Scan & identify', AppColors.primary, controller.navigateToWorkerMonitor),
+      _ActionData(Icons.videocam_rounded, 'Cameras', 'Manage & PPE policy',
+          AppColors.accent, controller.navigateToCameras),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: actions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 1.15,
+      ),
+      itemBuilder: (context, i) {
+        return _ActionTile(data: actions[i])
+            .animate()
+            .fadeIn(delay: (300 + i * 70).ms, duration: 380.ms)
+            .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
+      },
+    );
+  }
+}
+
+class _ActionData {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
+  const _ActionData(
+      this.icon, this.title, this.subtitle, this.color, this.onTap);
+}
 
-  const _FunctionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
+class _ActionTile extends StatelessWidget {
+  final _ActionData data;
+  const _ActionTile({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Icon
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
+    return GestureDetector(
+      onTap: data.onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.cardBackground,
+              Color.lerp(AppColors.cardBackground, data.color, 0.12)!,
+            ],
           ),
-
-          // Title and subtitle
-          Flexible(
-            child: Column(
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: data.color.withValues(alpha: 0.25)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: data.color.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: data.color.withValues(alpha: 0.3)),
+                  ),
+                  child: Icon(data.icon, color: data.color, size: 24),
+                ),
+                Icon(Icons.arrow_outward_rounded,
+                    color: AppColors.textSecondary.withValues(alpha: 0.6),
+                    size: 18),
+              ],
+            ),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  data.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: styles.AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
+                  data.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: styles.AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: styles.AppTextStyles.bodySmall.copyWith(fontSize: 11),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

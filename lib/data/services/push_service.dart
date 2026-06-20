@@ -27,7 +27,7 @@ class PushService extends GetxService {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         final n = message.notification;
         if (n != null) {
-          Get.snackbar(n.title ?? 'SafeSight', n.body ?? '',
+          Get.snackbar(n.title ?? 'SafeEye', n.body ?? '',
               snackPosition: SnackPosition.TOP);
         }
       });

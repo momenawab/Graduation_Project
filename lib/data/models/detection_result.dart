@@ -77,6 +77,9 @@ class PersonDetection extends Equatable {
   /// Worker identifier ("Unknown" if not recognized)
   final String? workerId;
 
+  /// Worker display name (resolved by the backend from workerId, may be null)
+  final String? workerName;
+
   /// Detection coordinates
   final BoundingBox boundingBox;
 
@@ -91,6 +94,7 @@ class PersonDetection extends Equatable {
 
   const PersonDetection({
     this.workerId,
+    this.workerName,
     required this.boundingBox,
     required this.ppeStatus,
     required this.overallStatus,
@@ -101,6 +105,7 @@ class PersonDetection extends Equatable {
   factory PersonDetection.fromJson(Map<String, dynamic> json) {
     return PersonDetection(
       workerId: json['workerId'] as String?,
+      workerName: json['workerName'] as String?,
       boundingBox: BoundingBox.fromJson(
         json['boundingBox'] as Map<String, dynamic>,
       ),
@@ -118,6 +123,7 @@ class PersonDetection extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'workerId': workerId,
+      'workerName': workerName,
       'boundingBox': boundingBox.toJson(),
       'ppeStatus': ppeStatus.map((e) => e.toJson()).toList(),
       'overallStatus': overallStatus.name,
@@ -128,6 +134,7 @@ class PersonDetection extends Equatable {
   /// Creates a copy of this PersonDetection with optionally updated fields.
   PersonDetection copyWith({
     String? workerId,
+    String? workerName,
     BoundingBox? boundingBox,
     List<PPEItem>? ppeStatus,
     ComplianceStatus? overallStatus,
@@ -135,6 +142,7 @@ class PersonDetection extends Equatable {
   }) {
     return PersonDetection(
       workerId: workerId ?? this.workerId,
+      workerName: workerName ?? this.workerName,
       boundingBox: boundingBox ?? this.boundingBox,
       ppeStatus: ppeStatus ?? this.ppeStatus,
       overallStatus: overallStatus ?? this.overallStatus,
@@ -145,6 +153,7 @@ class PersonDetection extends Equatable {
   @override
   List<Object?> get props => [
     workerId,
+    workerName,
     boundingBox,
     ppeStatus,
     overallStatus,

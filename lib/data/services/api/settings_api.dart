@@ -2,7 +2,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../models/user_settings.dart';
 import 'api_client.dart';
 
-/// Settings API — wired to the SafeSight Django auth endpoints
+/// Settings API — wired to the SafeEye Django auth endpoints
 /// (`/auth/settings/`, `/auth/profile/`, `/auth/logout/`).
 class SettingsApi {
   /// The API client instance

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'core/theme/app_theme.dart';
 import 'core/bindings/global_binding.dart';
 import 'core/localization/app_translations.dart';
@@ -12,6 +13,8 @@ import 'routes/route_generator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Pre-warm liquid-glass shaders so the glass nav bar doesn't flash on first paint.
+  await LiquidGlassWidgets.initialize();
   // Init storage early so we can read the saved language for the initial locale.
   await Get.putAsync<StorageService>(() => StorageService.getInstance(),
       permanent: true);
@@ -19,17 +22,17 @@ void main() async {
   await Get.putAsync<OfflineCache>(() => OfflineCache().init(), permanent: true);
   // F5 — initialise push (no-op if Firebase isn't configured).
   await Get.putAsync(() => PushService().init(), permanent: true);
-  runApp(const SafeSightApp());
+  runApp(const SafeEyeApp());
 }
 
-class SafeSightApp extends StatelessWidget {
-  const SafeSightApp({super.key});
+class SafeEyeApp extends StatelessWidget {
+  const SafeEyeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     final lang = Get.find<StorageService>().userLanguage; // 'en' | 'ar'
     return GetMaterialApp(
-      title: 'SafeSight',
+      title: 'SafeEye',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       // F12 — localization (English + Arabic). Arabic renders RTL automatically.

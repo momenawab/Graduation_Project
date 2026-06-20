@@ -1,4 +1,4 @@
-/// API configuration constants for SafeSight backend integration.
+/// API configuration constants for SafeEye backend integration.
 class ApiConstants {
   /// Base URL for the Django backend API.
   ///

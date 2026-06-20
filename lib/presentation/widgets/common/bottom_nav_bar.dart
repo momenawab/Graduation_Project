@@ -1,91 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:meta/meta.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../routes/app_routes.dart';
 
-/// Custom bottom navigation bar widget with route-based navigation.
+/// Floating liquid-glass bottom navigation bar.
+///
+/// Wraps `GlassBottomBar` from `sdegenaar/liquid_glass_widgets`, which renders a
+/// real shader-based frosted glass surface with a morphing selection indicator.
+/// The effect is richest on Impeller (iOS + modern Android) and degrades
+/// gracefully elsewhere.
+///
+/// API is kept source-compatible with the previous [BottomNavBar]: pass
+/// [currentIndex] and an optional [onTap]. Place it in
+/// `Scaffold.bottomNavigationBar` and set `extendBody: true` on the Scaffold so
+/// page content scrolls behind the glass for the best effect.
 @immutable
 class BottomNavBar extends StatelessWidget {
-  /// Current route index
+  /// Current route index.
   final int currentIndex;
 
-  /// Callback when tab is tapped
+  /// Optional callback fired before navigation when a tab is tapped.
   final ValueChanged<int>? onTap;
 
-  /// Background color (defaults to card background)
-  final Color? backgroundColor;
-
-  /// Selected item color (defaults to primary)
+  /// Selected item color (defaults to brand accent).
   final Color? selectedItemColor;
 
-  /// Unselected item color (defaults to text secondary)
+  /// Unselected item color (defaults to secondary text).
   final Color? unselectedItemColor;
 
-  /// Elevation (defaults to 8)
+  /// Kept for source compatibility; no longer used by the glass renderer.
+  final Color? backgroundColor;
   final double elevation;
 
   const BottomNavBar({
     required this.currentIndex,
     this.onTap,
-    this.backgroundColor,
     this.selectedItemColor,
     this.unselectedItemColor,
+    this.backgroundColor,
     this.elevation = 8,
+    super.key,
   });
+
+  static const List<GlassBottomBarTab> _tabs = [
+    GlassBottomBarTab(
+      icon: Icon(Icons.dashboard_outlined),
+      activeIcon: Icon(Icons.dashboard),
+      label: 'Dashboard',
+    ),
+    GlassBottomBarTab(
+      icon: Icon(Icons.people_outline),
+      activeIcon: Icon(Icons.people),
+      label: 'Workers',
+    ),
+    GlassBottomBarTab(
+      icon: Icon(Icons.insert_chart_outlined),
+      activeIcon: Icon(Icons.insert_chart),
+      label: 'Reports',
+    ),
+    GlassBottomBarTab(
+      icon: Icon(Icons.settings_outlined),
+      activeIcon: Icon(Icons.settings),
+      label: 'Settings',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: elevation,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          if (onTap != null) {
-            onTap!(index);
-          }
-          _navigateToRoute(index);
-        },
-        backgroundColor: backgroundColor ?? AppColors.cardBackground,
-        selectedItemColor: selectedItemColor ?? AppColors.primary,
-        unselectedItemColor: unselectedItemColor ?? AppColors.textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: elevation,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Workers',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insert_chart_outlined),
-            activeIcon: Icon(Icons.insert_chart),
-            label: 'Reports',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+    return SafeArea(
+      top: false,
+      child: GlassBottomBar(
+        selectedIndex: currentIndex,
+        onTabSelected: _handleTap,
+        tabs: _tabs,
+        selectedIconColor: selectedItemColor ?? AppColors.accent,
+        unselectedIconColor: unselectedItemColor ?? AppColors.textSecondary,
+        indicatorColor: (selectedItemColor ?? AppColors.accent)
+            .withValues(alpha: 0.18),
+        settings: const LiquidGlassSettings(
+          blur: 12,
+          glassColor: Color(0x1A2563EB), // faint brand-blue tint
+        ),
       ),
     );
   }
 
-  void _navigateToRoute(int index) {
+  void _handleTap(int index) {
+    onTap?.call(index);
+    if (index == currentIndex) return;
     switch (index) {
       case 0:
         Get.offAllNamed(AppRoutes.HOME);

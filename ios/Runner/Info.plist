@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Grad Project</string>
+	<string>SafeEye</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>SafeSight uses the camera for real-time PPE safety monitoring.</string>
+	<string>SafeEye uses the camera for real-time PPE safety monitoring.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>SafeSight accesses your photo library to pick videos for PPE detection testing.</string>
+	<string>SafeEye accesses your photo library to pick videos for PPE detection testing.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

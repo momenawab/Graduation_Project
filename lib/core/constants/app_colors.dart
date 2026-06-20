@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// SafeSight unified brand palette — modern **dark blue / navy** on a dark theme.
+/// SafeEye unified brand palette — modern **dark blue / navy** on a dark theme.
 /// Semantic colors (success/warning/error) are kept distinct from the brand blue.
 class AppColors {
   // Brand (dark blue / navy)

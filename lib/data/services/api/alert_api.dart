@@ -2,7 +2,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../models/alert_config.dart';
 import 'api_client.dart';
 
-/// Alert API — wired to the SafeSight Django alerts endpoints.
+/// Alert API — wired to the SafeEye Django alerts endpoints.
 ///
 /// Note on read-state: marking notifications read/unread is handled in real
 /// time over the `/ws/notifications/` WebSocket (`mark_read` message), so the

@@ -49,15 +49,25 @@ class WorkerDetailsController extends GetxController {
     await loadWorkerDetails();
   }
 
-  /// Calculates compliance rate based on violations.
+  /// Worker compliance rate (0–100).
+  ///
+  /// Prefers the backend's ready `compliance_rate` (resolved ÷ total violations).
+  /// Falls back to detection tallies if a future response includes them.
   double get complianceRate {
-    if (workerData.value == null) return 0.0;
+    final data = workerData.value;
+    if (data == null) return 0.0;
 
-    final totalDetections = workerData.value!['total_detections'] as int? ?? 0;
-    final violationCount = workerData.value!['violation_count'] as int? ?? 0;
+    final backendRate = data['compliance_rate'];
+    if (backendRate is num) {
+      return backendRate.toDouble().clamp(0, 100).toDouble();
+    }
 
+    final totalDetections = data['total_detections'] as int? ?? 0;
+    final violationCount = data['violation_count'] as int? ?? 0;
     if (totalDetections == 0) return 100.0;
-    return ((totalDetections - violationCount) / totalDetections * 100).clamp(0, 100);
+    return ((totalDetections - violationCount) / totalDetections * 100)
+        .clamp(0, 100)
+        .toDouble();
   }
 
   /// Gets compliance level text.

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../controllers/upload_controller.dart';
+import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/app_button.dart';
+import '../widgets/common/hero_badge.dart';
 import '../widgets/common/top_app_bar.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -20,18 +23,23 @@ class UploadDetectionScreen extends GetView<UploadController> {
         title: AppStrings.uploadDetection,
         showBackButton: true,
       ),
-      body: SafeArea(
-        child: Obx(() {
-          if (!controller.hasImage.value) {
-            return _buildEmptyState(context);
-          } else if (controller.isAnalyzing.value) {
-            return _buildAnalyzingState(context);
-          } else if (controller.analysisResult.value != null) {
-            return _buildResultState(context);
-          } else {
-            return _buildPreviewState(context);
-          }
-        }),
+      body: Stack(
+        children: [
+          const AmbientBackdrop(),
+          SafeArea(
+            child: Obx(() {
+              if (!controller.hasImage.value) {
+                return _buildEmptyState(context);
+              } else if (controller.isAnalyzing.value) {
+                return _buildAnalyzingState(context);
+              } else if (controller.analysisResult.value != null) {
+                return _buildResultState(context);
+              } else {
+                return _buildPreviewState(context);
+              }
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -39,39 +47,47 @@ class UploadDetectionScreen extends GetView<UploadController> {
   /// Build empty state when no image is selected
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.cloud_upload_outlined,
-            size: 80,
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Upload an image to analyze PPE compliance',
-            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AppButton(
-                text: 'Camera',
-                icon: Icons.camera_alt,
-                onPressed: () => controller.pickImageFromCamera(),
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const HeroBadge(icon: Icons.cloud_upload_outlined),
+            const SizedBox(height: 28),
+            const Text(
+              'Analyze PPE Compliance',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
-              const SizedBox(width: 16),
-              AppButton(
-                text: 'Gallery',
-                icon: Icons.photo_library,
-                onPressed: () => controller.pickImageFromGallery(),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Upload an image and SafeEye will detect protective equipment for everyone in frame.',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppButton(
+                  text: 'Camera',
+                  icon: Icons.camera_alt,
+                  onPressed: () => controller.pickImageFromCamera(),
+                ),
+                const SizedBox(width: 16),
+                AppButton(
+                  text: 'Gallery',
+                  icon: Icons.photo_library,
+                  onPressed: () => controller.pickImageFromGallery(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOut),
     );
   }
 
@@ -172,7 +188,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
         gradient: LinearGradient(
           colors: [
             AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
+            AppColors.primary.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -180,7 +196,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -197,7 +213,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           Container(
             width: 1,
             height: 40,
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
           ),
           _buildSummaryItem(
             '${result.compliant}',
@@ -207,7 +223,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           Container(
             width: 1,
             height: 40,
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
           ),
           _buildSummaryItem(
             '${result.nonCompliant}',
@@ -237,7 +253,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -255,12 +271,12 @@ class UploadDetectionScreen extends GetView<UploadController> {
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.1),
+            color: statusColor.withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -275,7 +291,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -290,7 +306,9 @@ class UploadDetectionScreen extends GetView<UploadController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Worker $workerNumber',
+                      detection.workerName?.isNotEmpty == true
+                          ? detection.workerName!
+                          : 'Worker $workerNumber',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -333,9 +351,9 @@ class UploadDetectionScreen extends GetView<UploadController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -362,7 +380,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: color.withOpacity(0.8),
+                  color: color.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -377,7 +395,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.textSecondary.withOpacity(0.05),
+        color: AppColors.textSecondary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -472,7 +490,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textSecondary.withOpacity(0.1),
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -495,7 +513,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textSecondary.withOpacity(0.08),
+            color: AppColors.textSecondary.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -512,7 +530,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -537,7 +555,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
                 decoration: BoxDecoration(
                   color: _getThresholdColor(
                     controller.confidenceThreshold.value,
-                  ).withOpacity(0.15),
+                  ).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -570,9 +588,9 @@ class UploadDetectionScreen extends GetView<UploadController> {
                       overlayRadius: 20,
                     ),
                     activeTrackColor: thresholdColor,
-                    inactiveTrackColor: thresholdColor.withOpacity(0.2),
+                    inactiveTrackColor: thresholdColor.withValues(alpha: 0.2),
                     thumbColor: thresholdColor,
-                    overlayColor: thresholdColor.withOpacity(0.2),
+                    overlayColor: thresholdColor.withValues(alpha: 0.2),
                     valueIndicatorColor: thresholdColor,
                     valueIndicatorTextStyle: TextStyle(
                       color: Colors.white,
@@ -605,7 +623,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withOpacity(0.08),
+              color: AppColors.textSecondary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -648,7 +666,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
       style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w500,
-        color: color.withOpacity(0.7),
+        color: color.withValues(alpha: 0.7),
         height: 1.2,
       ),
       textAlign: TextAlign.center,
@@ -725,7 +743,7 @@ class UploadDetectionScreen extends GetView<UploadController> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: Border.all(color: color, width: 2),
           ),

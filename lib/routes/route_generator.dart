@@ -17,6 +17,7 @@ import '../presentation/screens/worker_notifications_screen.dart';
 import '../presentation/screens/worker_violations_screen.dart';
 import '../presentation/screens/coming_soon_screen.dart';
 import '../presentation/screens/worker_monitor_screen.dart';
+import '../presentation/screens/camera_management_screen.dart';
 import '../presentation/screens/workers_list_screen.dart';
 import '../presentation/screens/worker_details_screen.dart';
 import '../presentation/screens/power_bi_report_screen.dart';
@@ -49,6 +50,8 @@ class AppRouteGenerator {
     GetPage(name: AppRoutes.INSTRUCTIONS, page: () => const InstructionsScreen()),
     // Worker Monitor screen
     GetPage(name: AppRoutes.WORKER_MONITOR, page: () => const WorkerMonitorScreen()),
+    // Camera Management screen
+    GetPage(name: AppRoutes.CAMERA_MANAGEMENT, page: () => const CameraManagementScreen()),
     // Settings screen
     GetPage(name: AppRoutes.SETTINGS, page: () => const SettingsScreen()),
     // Coming Soon placeholder

@@ -46,17 +46,32 @@ class WorkerController extends GetxController {
   final RxBool isLoading = false.obs;
 
   // Department options
-  static const List<String> departments = [
-    'Production',
-    'Maintenance',
-    'Safety',
-  ];
+  /// Departments mirror the backend's `Worker.DEPARTMENT_CHOICES`
+  /// (slug submitted to the API → human-readable label shown in the dropdown).
+  /// The backend has no endpoint to fetch these, so they are kept aligned here.
+  static const Map<String, String> departmentOptions = {
+    'construction': 'Construction',
+    'manufacturing': 'Manufacturing',
+    'maintenance': 'Maintenance',
+    'warehouse': 'Warehouse',
+    'laboratory': 'Laboratory',
+    'cleaning': 'Cleaning',
+    'other': 'Other',
+  };
 
-  // Job title options by department
+  /// Backend slugs, used as dropdown values.
+  static List<String> get departments => departmentOptions.keys.toList();
+
+  // Job title options by department slug. `position` is free-text on the
+  // backend, so these are a curated UX list per department.
   static const Map<String, List<String>> jobTitlesByDepartment = {
-    'Production': ['Operator', 'Supervisor', 'Technician'],
-    'Maintenance': ['Technician', 'Lead', 'Supervisor'],
-    'Safety': ['Inspector', 'Officer', 'Manager'],
+    'construction': ['Operator', 'Supervisor', 'Foreman', 'Laborer'],
+    'manufacturing': ['Operator', 'Technician', 'Supervisor', 'Quality Inspector'],
+    'maintenance': ['Technician', 'Electrician', 'Mechanic', 'Lead'],
+    'warehouse': ['Picker', 'Forklift Operator', 'Supervisor', 'Logistics Lead'],
+    'laboratory': ['Lab Technician', 'Analyst', 'Safety Officer'],
+    'cleaning': ['Cleaner', 'Sanitation Worker', 'Supervisor'],
+    'other': ['Worker', 'Supervisor', 'Manager'],
   };
 
   // PPE options the detection model can actually detect (C1). safetyGlasses
