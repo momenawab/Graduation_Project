@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/worker_controller.dart';
+import '../../data/services/face/face_quality_service.dart';
 import '../widgets/common/ambient_backdrop.dart';
 import '../widgets/common/app_button.dart';
 import '../widgets/common/app_input.dart';
@@ -88,159 +89,176 @@ class AddWorkerScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the photo picker section with circular avatar and camera/gallery buttons.
+  /// Builds the guided multi-angle face capture section (front / left / right).
+  /// Each shot is validated on-device before it is accepted.
   Widget _buildPhotoPickerSection(WorkerController controller) {
     return Obx(() {
-      final photo = controller.selectedPhoto.value;
-      final hasError = controller.photoError.value.isNotEmpty;
-
       return Column(
         children: [
-          // Circular avatar with photo or placeholder
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.cardBackground,
-                  border: Border.all(
-                    color: hasError
-                        ? AppColors.error
-                        : photo != null
-                            ? AppColors.primary
-                            : AppColors.textSecondary.withOpacity(0.3),
-                    width: 2,
-                  ),
-                  image: photo != null
-                      ? DecorationImage(
-                          image: FileImage(photo),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: photo == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt,
-                            size: 32,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Add Photo',
-                            style: styles.AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      )
-                    : null,
-              ),
-              // Remove photo button
-              if (photo != null)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: controller.removePhoto,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.error,
-                        border: Border.all(color: AppColors.background, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Camera and Gallery buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildPhotoButton(
-                icon: Icons.camera_alt,
-                label: 'Camera',
-                onTap: controller.pickPhotoFromCamera,
-              ),
-              const SizedBox(width: 16),
-              _buildPhotoButton(
-                icon: Icons.photo_library,
-                label: 'Gallery',
-                onTap: controller.pickPhotoFromGallery,
-              ),
-            ],
-          ),
-          if (hasError) ...[
-            const SizedBox(height: 8),
-            Text(
-              controller.photoError.value,
-              style: styles.AppTextStyles.bodySmall.copyWith(
-                color: AppColors.error,
-              ),
+          Text(
+            'Face Enrollment',
+            style: styles.AppTextStyles.bodyLarge.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-          ],
+          ),
           const SizedBox(height: 4),
           Text(
-            'A clear face photo is required for worker identification',
+            'Capture the face from 3 angles for reliable recognition',
             style: styles.AppTextStyles.bodySmall.copyWith(
               color: AppColors.textSecondary,
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(
+              WorkerController.captureAngles.length,
+              (index) => _buildCaptureSlot(controller, index),
+            ),
+          ),
+          if (controller.photoError.value.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              controller.photoError.value,
+              style: styles.AppTextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       );
     });
   }
 
-  /// Builds a small icon button for photo picking.
-  Widget _buildPhotoButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+  /// Builds a single guided capture slot for the given angle [index].
+  Widget _buildCaptureSlot(WorkerController controller, int index) {
+    return Obx(() {
+      final angle = WorkerController.captureAngles[index];
+      final photo = controller.capturedPhotos[index];
+      final slotError = controller.photoSlotErrors[index];
+      final isAnalyzing = controller.analyzingSlot.value == index;
+      final hasPhoto = photo != null;
+      final hasError = slotError.isNotEmpty;
+
+      return SizedBox(
+        width: 96,
+        child: Column(
           children: [
-            Icon(icon, size: 18, color: AppColors.primary),
-            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: isAnalyzing ? null : () => controller.captureForSlot(index),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.cardBackground,
+                      border: Border.all(
+                        color: hasError
+                            ? AppColors.error
+                            : hasPhoto
+                                ? AppColors.primary
+                                : AppColors.textSecondary.withOpacity(0.3),
+                        width: 2,
+                      ),
+                      image: hasPhoto
+                          ? DecorationImage(
+                              image: FileImage(photo),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: hasPhoto
+                        ? null
+                        : Icon(
+                            Icons.camera_alt,
+                            size: 26,
+                            color: AppColors.textSecondary,
+                          ),
+                  ),
+                  if (isAnalyzing)
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.45),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (hasPhoto && !isAnalyzing)
+                    Positioned(
+                      top: 0,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => controller.removeSlot(index),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.error,
+                            border:
+                                Border.all(color: AppColors.background, width: 2),
+                          ),
+                          child: const Icon(Icons.close,
+                              size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  if (hasPhoto && !isAnalyzing)
+                    Positioned(
+                      bottom: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                        ),
+                        child: const Icon(Icons.check,
+                            size: 12, color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
             Text(
-              label,
+              angle.label,
               style: styles.AppTextStyles.bodySmall.copyWith(
-                color: AppColors.primary,
+                color: hasPhoto ? AppColors.primary : AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
+            const SizedBox(height: 2),
+            Text(
+              hasError ? slotError : angle.hint,
+              style: styles.AppTextStyles.bodySmall.copyWith(
+                color: hasError ? AppColors.error : AppColors.textSecondary,
+                fontSize: 9.5,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+            ),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 
   /// Builds Worker ID text input with validation.

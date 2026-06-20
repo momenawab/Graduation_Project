@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import '../../data/models/ppe_item.dart';
 import '../../data/services/api/auth_api_service.dart';
 import '../../data/services/api/worker_api.dart';
+import '../../data/services/face/face_quality_service.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/validators.dart';
 
@@ -15,10 +17,31 @@ class WorkerController extends GetxController {
   late final AuthApiService _authApiService;
   late final WorkerApi _workerApi;
   final ImagePicker _picker = ImagePicker();
+  final FaceQualityService _faceQuality = FaceQualityService();
 
-  // Photo state
+  // Guided multi-angle capture slots: front, left, right.
+  static const List<FaceAngle> captureAngles = [
+    FaceAngle.front,
+    FaceAngle.left,
+    FaceAngle.right,
+  ];
+
+  /// One captured file per angle slot (null until captured).
+  final RxList<File?> capturedPhotos = <File?>[null, null, null].obs;
+
+  /// Per-slot quality error message (empty when the slot is fine/empty).
+  final RxList<String> photoSlotErrors = <String>['', '', ''].obs;
+
+  /// Index of the slot currently being analyzed, or -1 when idle.
+  final RxInt analyzingSlot = (-1).obs;
+
+  // Photo state (front photo also drives the legacy avatar preview)
   final Rx<File?> selectedPhoto = Rx<File?>(null);
   final RxString photoError = ''.obs;
+
+  /// All successfully captured photos, in slot order.
+  List<File> get validPhotos =>
+      capturedPhotos.whereType<File>().toList(growable: false);
 
   // Form state observables
   final RxString workerId = ''.obs;
@@ -97,6 +120,10 @@ class WorkerController extends GetxController {
 
   @override
   void onClose() {
+    _faceQuality.dispose();
+    capturedPhotos.close();
+    photoSlotErrors.close();
+    analyzingSlot.close();
     selectedPhoto.close();
     photoError.close();
     workerId.close();
@@ -131,46 +158,82 @@ class WorkerController extends GetxController {
     }
   }
 
-  /// Pick photo from camera.
-  Future<void> pickPhotoFromCamera() async {
+  /// Captures (or recaptures) a photo for the given guided angle [slot],
+  /// running an on-device face quality check before accepting it.
+  Future<void> captureForSlot(int slot) async {
+    if (slot < 0 || slot >= captureAngles.length) return;
+    final angle = captureAngles[slot];
+
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
-        maxWidth: 1080,
-        maxHeight: 1080,
+        imageQuality: 90,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        preferredCameraDevice: CameraDevice.front,
       );
-      if (image != null) {
-        selectedPhoto.value = File(image.path);
-        photoError.value = '';
+      if (image == null) return;
+
+      // Bake EXIF orientation into the pixels. iOS front-camera stills often
+      // carry a rotation flag that ML Kit's fromFilePath (and the server's
+      // InsightFace) ignore, feeding the face in sideways -> "no face found".
+      final file = await _normalizeOrientation(File(image.path));
+
+      analyzingSlot.value = slot;
+      final result = await _faceQuality.analyze(file, angle);
+      analyzingSlot.value = -1;
+
+      if (!result.ok) {
+        photoSlotErrors[slot] = result.message;
+        photoSlotErrors.refresh();
+        return;
       }
+
+      capturedPhotos[slot] = file;
+      capturedPhotos.refresh();
+      photoSlotErrors[slot] = '';
+      photoSlotErrors.refresh();
+
+      // The front photo doubles as the worker's profile/avatar image.
+      if (slot == 0) {
+        selectedPhoto.value = file;
+      }
+      photoError.value = '';
     } catch (e) {
-      photoError.value = 'Failed to capture photo';
+      analyzingSlot.value = -1;
+      photoSlotErrors[slot] = 'Failed to capture photo';
+      photoSlotErrors.refresh();
     }
   }
 
-  /// Pick photo from gallery.
-  Future<void> pickPhotoFromGallery() async {
+  /// Re-encodes [file] with its EXIF orientation applied to the pixels, so the
+  /// face is always upright for detection and upload. Returns the original
+  /// file unchanged if decoding fails.
+  Future<File> _normalizeOrientation(File file) async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1080,
-        maxHeight: 1080,
-      );
-      if (image != null) {
-        selectedPhoto.value = File(image.path);
-        photoError.value = '';
-      }
-    } catch (e) {
-      photoError.value = 'Failed to select photo';
+      final bytes = await file.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return file;
+      final upright = img.bakeOrientation(decoded);
+      final out = File(
+          '${file.parent.path}/upright_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await out.writeAsBytes(img.encodeJpg(upright, quality: 90));
+      return out;
+    } catch (_) {
+      return file;
     }
   }
 
-  /// Remove selected photo.
-  void removePhoto() {
-    selectedPhoto.value = null;
-    photoError.value = '';
+  /// Removes the photo captured for [slot].
+  void removeSlot(int slot) {
+    if (slot < 0 || slot >= capturedPhotos.length) return;
+    capturedPhotos[slot] = null;
+    capturedPhotos.refresh();
+    photoSlotErrors[slot] = '';
+    photoSlotErrors.refresh();
+    if (slot == 0) {
+      selectedPhoto.value = null;
+    }
   }
 
   /// Validates worker ID field.
@@ -226,10 +289,14 @@ class WorkerController extends GetxController {
   bool validateForm() {
     bool isValid = true;
 
-    // Validate photo
-    if (selectedPhoto.value == null) {
-      photoError.value = 'A face photo is required for worker identification';
+    // Validate photo — at least the front photo is required; capturing all
+    // three angles is recommended for the most reliable recognition.
+    if (validPhotos.isEmpty) {
+      photoError.value =
+          'Capture at least the front face photo (all 3 angles recommended)';
       isValid = false;
+    } else {
+      photoError.value = '';
     }
 
     // Validate worker ID
@@ -291,7 +358,7 @@ class WorkerController extends GetxController {
         departmentError.value.isEmpty &&
         jobTitleError.value.isEmpty &&
         ppeError.value.isEmpty &&
-        selectedPhoto.value != null &&
+        validPhotos.isNotEmpty &&
         workerId.value.isNotEmpty &&
         fullName.value.isNotEmpty &&
         department.value.isNotEmpty &&
@@ -374,11 +441,11 @@ class WorkerController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Save worker with photo to backend
+      // Save worker with all captured angle photos to backend
       await _workerApi.addWorkerWithPhoto(
         workerId: workerId.value,
         name: fullName.value,
-        photo: selectedPhoto.value!,
+        photos: validPhotos,
         department: department.value.isNotEmpty ? department.value : null,
         position: jobTitle.value.isNotEmpty ? jobTitle.value : null,
         requiredPpe: requiredPpe.isNotEmpty
@@ -431,6 +498,9 @@ class WorkerController extends GetxController {
   /// Resets the form to initial state.
   void resetForm() {
     selectedPhoto.value = null;
+    capturedPhotos.value = <File?>[null, null, null];
+    photoSlotErrors.value = <String>['', '', ''];
+    analyzingSlot.value = -1;
     photoError.value = '';
     workerId.value = '';
     fullName.value = '';

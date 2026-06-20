@@ -201,11 +201,14 @@ class WorkerApi {
     }
   }
 
-  /// Creates a new worker with a face photo for face recognition.
+  /// Creates a new worker with one or more face photos for face recognition.
+  ///
+  /// Multiple photos (e.g. front / left / right) produce a more robust set of
+  /// face embeddings on the backend. They are sent under the `photos` field.
   Future<Map<String, dynamic>> addWorkerWithPhoto({
     required String workerId,
     required String name,
-    required File photo,
+    required List<File> photos,
     String? department,
     String? position,
     List<String>? requiredPpe,
@@ -213,14 +216,19 @@ class WorkerApi {
     String? phone,
   }) async {
     try {
-      final fileBytes = await photo.readAsBytes();
+      final photoFiles = <MultipartFile>[];
+      for (final photo in photos) {
+        final bytes = await photo.readAsBytes();
+        photoFiles.add(MultipartFile.fromBytes(
+          bytes,
+          filename: photo.path.split('/').last,
+        ));
+      }
+
       final formData = FormData.fromMap({
         'worker_id': workerId,
         'name': name,
-        'photo': MultipartFile.fromBytes(
-          fileBytes,
-          filename: photo.path.split('/').last,
-        ),
+        'photos': photoFiles,
         if (department != null) 'department': department,
         if (position != null) 'position': position,
         if (requiredPpe != null) 'required_ppe': requiredPpe.join(','),

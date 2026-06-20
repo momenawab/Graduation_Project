@@ -12,7 +12,7 @@ class ApiConstants {
   /// wsUrl is derived automatically (https -> wss).
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://16.171.170.25:80/',
+    defaultValue: 'https://safeeye.site/',
   );
 
   /// WebSocket URL for real-time detection.

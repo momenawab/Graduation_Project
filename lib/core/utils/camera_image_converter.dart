@@ -6,12 +6,20 @@ import 'package:image/image.dart' as img;
 class CameraImageConverter {
   CameraImageConverter._();
 
-  static Uint8List? cameraImageToJpeg(CameraImage image, {int quality = 70}) {
+  /// Converts a camera stream frame to JPEG bytes.
+  ///
+  /// [rotationDegrees] rotates the decoded frame clockwise before encoding so
+  /// the subject is upright for the detection model. The camera stream arrives
+  /// in the sensor's native orientation (sideways when the phone is held in
+  /// portrait); without this the person/PPE model sees a rotated scene and
+  /// detects nothing.
+  static Uint8List? cameraImageToJpeg(CameraImage image,
+      {int quality = 70, int rotationDegrees = 0}) {
     switch (image.format.group) {
       case ImageFormatGroup.yuv420:
-        return yuv420ToJpeg(image, quality: quality);
+        return yuv420ToJpeg(image, quality: quality, rotationDegrees: rotationDegrees);
       case ImageFormatGroup.bgra8888:
-        return bgra8888ToJpeg(image, quality: quality);
+        return bgra8888ToJpeg(image, quality: quality, rotationDegrees: rotationDegrees);
       case ImageFormatGroup.jpeg:
         return Uint8List.fromList(image.planes.first.bytes);
       default:
@@ -19,7 +27,15 @@ class CameraImageConverter {
     }
   }
 
-  static Uint8List yuv420ToJpeg(CameraImage image, {int quality = 70}) {
+  /// Applies [rotationDegrees] (clockwise) to [out] if non-zero.
+  static img.Image _applyRotation(img.Image out, int rotationDegrees) {
+    final normalized = ((rotationDegrees % 360) + 360) % 360;
+    if (normalized == 0) return out;
+    return img.copyRotate(out, angle: normalized);
+  }
+
+  static Uint8List yuv420ToJpeg(CameraImage image,
+      {int quality = 70, int rotationDegrees = 0}) {
     final width = image.width;
     final height = image.height;
 
@@ -35,7 +51,7 @@ class CameraImageConverter {
     final uvRowStride = uPlane.bytesPerRow;
     final uvPixelStride = uPlane.bytesPerPixel ?? 1;
 
-    final out = img.Image(width: width, height: height);
+    var out = img.Image(width: width, height: height);
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
@@ -66,18 +82,21 @@ class CameraImageConverter {
       }
     }
 
+    out = _applyRotation(out, rotationDegrees);
     return Uint8List.fromList(img.encodeJpg(out, quality: quality));
   }
 
-  static Uint8List bgra8888ToJpeg(CameraImage image, {int quality = 70}) {
+  static Uint8List bgra8888ToJpeg(CameraImage image,
+      {int quality = 70, int rotationDegrees = 0}) {
     final plane = image.planes.first;
-    final out = img.Image.fromBytes(
+    var out = img.Image.fromBytes(
       width: image.width,
       height: image.height,
       bytes: plane.bytes.buffer,
       rowStride: plane.bytesPerRow,
       order: img.ChannelOrder.bgra,
     );
+    out = _applyRotation(out, rotationDegrees);
     return Uint8List.fromList(img.encodeJpg(out, quality: quality));
   }
 }

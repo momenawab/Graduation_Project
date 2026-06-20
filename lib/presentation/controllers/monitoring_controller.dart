@@ -231,7 +231,22 @@ class MonitoringController extends GetxController {
     _lastSentAt = now;
 
     try {
-      final bytes = CameraImageConverter.cameraImageToJpeg(image);
+      // The camera stream is in the sensor's native orientation, which is
+      // sideways when the phone is held in portrait. Rotate it upright so the
+      // detection model (and worker face matching) sees a normal scene.
+      // copyRotate() in the image package rotates clockwise. Verified against a
+      // real device frame: the back-camera stream needs a 270° (i.e. 90° CCW)
+      // turn to stand the subject upright; the mirrored front camera needs 90°.
+      final desc = _cameraController?.description;
+      final sensor = desc?.sensorOrientation ?? 90;
+      int rotation = (360 - sensor) % 360; // back camera
+      if (desc?.lensDirection == CameraLensDirection.front) {
+        rotation = sensor % 360;
+      }
+      final bytes = CameraImageConverter.cameraImageToJpeg(
+        image,
+        rotationDegrees: rotation,
+      );
       if (bytes != null && _detectionStream != null) {
         _detectionStream!.sendFrameBytes(bytes);
       }
